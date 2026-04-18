@@ -1,0 +1,48 @@
+{
+  "categories": [
+    {
+      "id": "transport", "name": "Transport", "emoji": "🚲", "color": "#10b981",
+      "actions": [
+        { "id": "bike",    "label": "Biked instead of drove",  "xp": 15, "co2": 2.3 },
+        { "id": "walk",    "label": "Walked instead of drove", "xp": 10, "co2": 1.8 },
+        { "id": "transit", "label": "Took public transit",     "xp": 8,  "co2": 1.5 },
+        { "id": "carpool", "label": "Carpooled",               "xp": 6,  "co2": 1.0 }
+      ]
+    },
+    {
+      "id": "food", "name": "Food", "emoji": "🥗", "color": "#f59e0b",
+      "actions": [
+        { "id": "veggie",   "label": "Ate vegetarian meal",   "xp": 8,  "co2": 1.2 },
+        { "id": "vegan",    "label": "Ate vegan meal",        "xp": 10, "co2": 1.8 },
+        { "id": "local",    "label": "Bought local produce",  "xp": 5,  "co2": 0.5 },
+        { "id": "no-waste", "label": "Zero food waste today", "xp": 7,  "co2": 0.8 }
+      ]
+    },
+    {
+      "id": "energy", "name": "Energy", "emoji": "⚡", "color": "#3b82f6",
+      "actions": [
+        { "id": "air-dry",    "label": "Air-dried laundry",        "xp": 6, "co2": 0.8 },
+        { "id": "cold-wash",  "label": "Cold water wash",          "xp": 5, "co2": 0.6 },
+        { "id": "lights-off", "label": "Turned off unused lights", "xp": 2, "co2": 0.1 },
+        { "id": "unplug",     "label": "Unplugged devices",        "xp": 3, "co2": 0.2 }
+      ]
+    },
+    {
+      "id": "waste", "name": "Waste", "emoji": "♻️", "color": "#8b5cf6",
+      "actions": [
+        { "id": "recycle",  "label": "Recycled properly",            "xp": 5,  "co2": 0.4 },
+        { "id": "reusable", "label": "Used reusable bag/bottle",     "xp": 3,  "co2": 0.2 },
+        { "id": "compost",  "label": "Composted food scraps",        "xp": 6,  "co2": 0.5 },
+        { "id": "repair",   "label": "Repaired instead of replaced", "xp": 10, "co2": 2.0 }
+      ]
+    },
+    {
+      "id": "shopping", "name": "Shopping", "emoji": "🛍️", "color": "#ec4899",
+      "actions": [
+        { "id": "secondhand",        "label": "Bought secondhand",            "xp": 12, "co2": 3.0 },
+        { "id": "sustainable-brand", "label": "Chose sustainable brand",      "xp": 8,  "co2": 1.5 },
+        { "id": "minimal",           "label": "Skipped unnecessary purchase", "xp": 5,  "co2": 1.0 }
+      ]
+    }
+  ]
+}
