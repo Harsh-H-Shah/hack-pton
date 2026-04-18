@@ -49,9 +49,10 @@ const WorldScene = forwardRef(function WorldScene(
         style={{ width: '100%', height: 'auto', display: 'block' }}
       >
         <SmogLayer tierId={tier?.id ?? 1} />
-        <CloudLayer textures={textures} tierId={tier?.id ?? 1} />
+        <CloudLayer tierId={tier?.id ?? 1} />
         <StructureLayer
           environment={environment}
+          tierId={tier?.id ?? 1}
           textures={textures}
           unlockedElements={unlockedElements}
         />

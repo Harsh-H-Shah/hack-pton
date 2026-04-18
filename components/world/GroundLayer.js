@@ -1,76 +1,63 @@
 'use client';
 import { Graphics, Sprite, Container } from '@pixi/react';
 import { useCallback, useRef, useEffect } from 'react';
-import gsap from 'gsap';
+import { gsap } from 'gsap';
 import { WORLD_ELEMENTS } from '@/lib/worldElements';
 
 // Ground color per tier
-const GROUND_COLORS = [0x7a6a40, 0x8a8a50, 0x5a8a3a, 0x3d7a3d, 0x2d7030, 0x1a6020];
+const GROUND_COLORS = [0x6a5a30, 0x7a7a40, 0x5a8a3a, 0x3d7a3d, 0x2d7030, 0x1a6020];
 
-function UnlockedSprite({ texture, el, elementId }) {
-  const spriteRef = useRef(null);
-
+function UnlockedSprite({ texture, el }) {
+  const ref = useRef(null);
   useEffect(() => {
-    if (spriteRef.current) {
-      gsap.from(spriteRef.current, { pixi: { alpha: 0, y: el.y + 30 }, duration: 0.8, ease: 'back.out(1.5)' });
+    if (ref.current) {
+      gsap.from(ref.current, {
+        pixi: { alpha: 0, y: el.y + 25 },
+        duration: 0.8,
+        ease: 'back.out(1.4)',
+      });
     }
   }, []);
 
-  if (!texture) {
-    // Emoji fallback rendered as a placeholder div — not visible in PixiJS canvas,
-    // but we skip gracefully
-    return null;
-  }
-
+  if (!texture) return null;
   return (
     <Sprite
-      ref={spriteRef}
+      ref={ref}
       texture={texture}
       x={el.x} y={el.y}
       scale={el.scale}
-      anchor={0.5}
-      interactive
-      cursor="pointer"
+      anchor={[0.5, 1]}
     />
   );
 }
 
 export default function GroundLayer({ tierId, textures, unlockedElements, environment }) {
-  const groundColor = GROUND_COLORS[tierId - 1] ?? GROUND_COLORS[0];
+  const groundColor = GROUND_COLORS[Math.max(0, Math.min(5, tierId - 1))];
 
   const drawGround = useCallback((g) => {
     g.clear();
-    // Main ground band
     g.beginFill(groundColor);
-    g.drawRect(0, 370, 800, 80);
+    g.drawRect(0, 368, 800, 82);
     g.endFill();
-    // Lighter ground strip
-    g.beginFill(groundColor + 0x101010);
-    g.drawRect(0, 370, 800, 12);
+    // Lighter top strip
+    g.beginFill(groundColor + 0x181808);
+    g.drawRect(0, 368, 800, 10);
     g.endFill();
   }, [groundColor]);
 
-  // Ground-level elements only (not structure layer)
-  const groundEls = Object.entries(WORLD_ELEMENTS).filter(([, el]) => {
-    if (el.env !== 'all' && el.env !== environment) return false;
-    if (!unlockedElements.includes(el.env === 'all' ? Object.keys(WORLD_ELEMENTS).find(k => WORLD_ELEMENTS[k] === el) : null) &&
-        !unlockedElements.some(uid => WORLD_ELEMENTS[uid] === el)) return false;
-    return true;
-  });
+  // Render every unlocked element whose sprite is ground-level
+  // (structure-layer elements like solar panels are handled in StructureLayer)
+  const STRUCTURE_IDS = new Set(['home-energy-1', 'office-energy-1', 'nbhd-energy-1']);
 
   return (
     <Container>
       <Graphics draw={drawGround} />
       {unlockedElements.map(id => {
+        if (STRUCTURE_IDS.has(id)) return null;
         const el = WORLD_ELEMENTS[id];
         if (!el) return null;
-        if (el.env !== 'all' && el.env !== environment) return null;
-        // Skip structure-layer elements (handled by StructureLayer)
-        if (id.includes('energy-1') || id.includes('energy-facade')) return null;
         const texture = textures[el.sprite];
-        return (
-          <UnlockedSprite key={id} texture={texture} el={el} elementId={id} />
-        );
+        return <UnlockedSprite key={id} texture={texture} el={el} />;
       })}
     </Container>
   );
