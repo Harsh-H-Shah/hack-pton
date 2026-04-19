@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect, Suspense, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, Environment, Text, Box, Plane, Float, Clone, useTexture, Loader } from '@react-three/drei';
+import { useGLTF, Environment, Text, Box, Plane, Float, Clone, useTexture, Loader, Html } from '@react-three/drei';
 
 const TILE_SIZE = 100;
 
@@ -62,6 +62,15 @@ const ZONES = [
     { x: 11.0, z: 7.5, cat: 'shopping', label: 'Eco Market' },
     { x: 9.8, z: 10.0, cat: 'transport', label: 'EV Keys' }
 ];
+
+const ZONE_COLORS = {
+    transport: '#40a0f0', 
+    food: '#f0a020', 
+    energy: '#f0e020',
+    waste: '#a060f0', 
+    shopping: '#f040a0', 
+    nature: '#16a34a'
+};
 
 function rectTo3D(x, y, w, h) {
     const scale = 1 / TILE_SIZE;
@@ -412,17 +421,32 @@ export default function WorldCanvas({ environment = 'home', tier = 1, unlockedEl
                                     {/* Task Zone Highlight */}
                                     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
                                         <ringGeometry args={[0.7, 0.9, 32]} />
-                                        <meshBasicMaterial color="#fde047" transparent opacity={0.8} />
+                                        <meshBasicMaterial color={ZONE_COLORS[z.cat] || "#fde047"} transparent opacity={0.8} />
                                     </mesh>
                                     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
                                         <circleGeometry args={[0.7, 32]} />
-                                        <meshBasicMaterial color="#fde047" transparent opacity={0.2} />
+                                        <meshBasicMaterial color={ZONE_COLORS[z.cat] || "#fde047"} transparent opacity={0.2} />
                                     </mesh>
                                     
                                     <Float speed={2} rotationIntensity={0} floatIntensity={0.5}>
-                                        <Text position={[0, 1.5, 0]} fontSize={0.3} color="black" outlineWidth={0.02} outlineColor="white">
-                                            {z.label}
-                                        </Text>
+                                        <Html position={[0, 1.5, 0]} center transform sprite zIndexRange={[100, 0]}>
+                                            <div style={{
+                                                background: '#080810',
+                                                border: `3px solid ${ZONE_COLORS[z.cat] || "#fde047"}`,
+                                                padding: '6px 12px',
+                                                borderRadius: '8px',
+                                                color: 'white',
+                                                fontFamily: 'var(--font-retro), monospace',
+                                                fontSize: '12px',
+                                                pointerEvents: 'none',
+                                                whiteSpace: 'nowrap',
+                                                boxShadow: '0 4px 6px rgba(0,0,0,0.4)',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '1px'
+                                            }}>
+                                                {z.label}
+                                            </div>
+                                        </Html>
                                     </Float>
                                 </group>
                             );
