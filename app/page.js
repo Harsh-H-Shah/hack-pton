@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import actionsData from '@/data/actions.json';
+import { getTierForXp, getNextTier } from '@/lib/tiers';
 
 const WorldCanvas = dynamic(() => import('@/components/world/WorldCanvas'), { ssr: false });
 
@@ -23,13 +24,40 @@ export default function HomePage() {
   const [celebration, setCelebration] = useState(null);
   const [logging, setLogging]   = useState({});
   const [isInterior, setIsInterior] = useState(false);
+  const [localXp, setLocalXp] = useState(0);
+  const [localCo2, setLocalCo2] = useState(0);
   const toastIdRef = useRef(0);
 
   useEffect(() => {
     const env = localStorage.getItem('ecoverse-env');
     if (!env) { router.push('/onboarding'); return; }
+
+    // Restore persisted XP immediately so HUD is correct before server responds
+    const savedXp  = parseInt(localStorage.getItem('ecoverse-xp')  || '0', 10);
+    const savedCo2 = parseFloat(localStorage.getItem('ecoverse-co2') || '0');
+    if (savedXp  > 0) setLocalXp(savedXp);
+    if (savedCo2 > 0) setLocalCo2(savedCo2);
+
+    // Resync Vercel's ephemeral SQLite from localStorage on every cold-start
+    if (savedXp > 0) {
+      fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ xp: savedXp, co2: savedCo2 }),
+      }).catch(() => {});
+    }
+
     fetchData();
   }, []);
+
+  // Keep localXp in sync with server (take whichever is higher)
+  useEffect(() => {
+    if (!stats) return;
+    const sXp  = stats.user?.total_xp        ?? 0;
+    const sCo2 = stats.user?.total_co2_saved  ?? 0;
+    setLocalXp(prev  => { const v = Math.max(prev, sXp);  localStorage.setItem('ecoverse-xp',  String(v)); return v; });
+    setLocalCo2(prev => { const v = Math.max(prev, sCo2); localStorage.setItem('ecoverse-co2', String(v)); return v; });
+  }, [stats]);
 
   const fetchData = async () => {
     const [w, s] = await Promise.all([
@@ -53,9 +81,12 @@ export default function HomePage() {
       const res = await fetch('/api/actions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ actionId, userId: 'default-user' }),
+        body: JSON.stringify({ actionId, userId: 'default-user', clientXp: localXp, clientCo2: localCo2 }),
       });
       const data = await res.json();
+      // Update local state immediately from server response — no waiting for fetchData
+      if (data.newTotalXp  != null) { setLocalXp(data.newTotalXp);   localStorage.setItem('ecoverse-xp',  String(data.newTotalXp)); }
+      if (data.newTotalCo2 != null) { setLocalCo2(data.newTotalCo2); localStorage.setItem('ecoverse-co2', String(data.newTotalCo2)); }
       addToast(`🌟 +${data.xp ?? '?'} XP 🌟`, '#10d870');
       if (data.tierChanged) setCelebration(data.newTier);
       fetchData();
@@ -80,15 +111,17 @@ export default function HomePage() {
     else addToast('OUTSIDE', '#10d870');
   }, [addToast]);
 
-  const tier       = world?.tier      ?? { id:1, name:'Barren', emoji:'🌫️' };
-  const nextTier   = world?.nextTier;
-  const totalXp    = stats?.user?.total_xp    ?? 0;
-  const co2Saved   = stats?.user?.total_co2_saved?.toFixed(1) ?? '0';
-  const streak     = stats?.user?.streak_days ?? 0;
+  // Derive everything from localXp (localStorage-backed) so it's always correct
+  // even after a Vercel cold-start that wipes the ephemeral SQLite DB
+  const totalXp      = localXp;
+  const co2Saved     = localCo2.toFixed(1);
+  const tier         = getTierForXp(totalXp);
+  const nextTier     = getNextTier(totalXp);
+  const streak       = stats?.user?.streak_days ?? 0;
   const actionsToday = stats?.actionsToday ?? 0;
-  const tierMin    = tier.minXp   ?? 0;
-  const tierMax    = nextTier?.minXp ?? tierMin + 100;
-  const progress   = Math.min(100, Math.max(0, ((totalXp - tierMin) / (tierMax - tierMin)) * 100));
+  const tierMin      = tier.minXp ?? 0;
+  const tierMax      = nextTier?.minXp ?? tierMin + 100;
+  const progress     = Math.min(100, Math.max(0, ((totalXp - tierMin) / (tierMax - tierMin)) * 100));
   const categoryCounts = stats?.categoryCounts ?? {};
 
   const activeCatData = actionsData.categories.find(c => c.id === activePanel);

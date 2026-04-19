@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getOrCreateUser, logAction, getActions } from '@/lib/db';
+import { getOrCreateUser, logAction, getActions, resyncUser } from '@/lib/db';
 import { getActionById } from '@/lib/actions';
 import { getTierForXp } from '@/lib/tiers';
 
 export async function POST(req) {
   try {
-    const { actionId, userId = 'default-user', description } = await req.json();
+    const { actionId, userId = 'default-user', description, clientXp = 0, clientCo2 = 0 } = await req.json();
+
+    // Resync DB from client if this Lambda instance just cold-started with empty /tmp
+    if (clientXp > 0) resyncUser(userId, clientXp, clientCo2);
 
     const actionDef = getActionById(actionId);
     if (!actionDef) return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
