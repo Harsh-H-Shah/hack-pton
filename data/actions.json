@@ -21,10 +21,12 @@
     {
       "id": "energy", "name": "Energy", "emoji": "⚡", "color": "#3b82f6",
       "actions": [
-        { "id": "air-dry",    "label": "Air-dried laundry",        "xp": 6, "co2": 0.8 },
-        { "id": "cold-wash",  "label": "Cold water wash",          "xp": 5, "co2": 0.6 },
-        { "id": "lights-off", "label": "Turned off unused lights", "xp": 2, "co2": 0.1 },
-        { "id": "unplug",     "label": "Unplugged devices",        "xp": 3, "co2": 0.2 }
+        { "id": "air-dry",    "label": "Air-dried laundry",           "xp": 6,  "co2": 0.8 },
+        { "id": "cold-wash",  "label": "Cold water wash",             "xp": 5,  "co2": 0.6 },
+        { "id": "lights-off", "label": "Turned off unused lights",    "xp": 2,  "co2": 0.1 },
+        { "id": "unplug",     "label": "Unplugged devices",           "xp": 3,  "co2": 0.2 },
+        { "id": "solar",      "label": "Used/installed solar energy", "xp": 20, "co2": 5.0 },
+        { "id": "thermostat", "label": "Optimized thermostat",        "xp": 4,  "co2": 0.5 }
       ]
     },
     {
@@ -42,6 +44,17 @@
         { "id": "secondhand",        "label": "Bought secondhand",            "xp": 12, "co2": 3.0 },
         { "id": "sustainable-brand", "label": "Chose sustainable brand",      "xp": 8,  "co2": 1.5 },
         { "id": "minimal",           "label": "Skipped unnecessary purchase", "xp": 5,  "co2": 1.0 }
+      ]
+    },
+    {
+      "id": "nature", "name": "Nature", "emoji": "🌳", "color": "#16a34a",
+      "actions": [
+        { "id": "plant-tree",    "label": "Planted a tree or sapling",         "xp": 25, "co2": 10.0 },
+        { "id": "community-cleanup", "label": "Did a community/park cleanup",  "xp": 15, "co2": 2.0 },
+        { "id": "pollinator",    "label": "Planted pollinator-friendly plants", "xp": 12, "co2": 1.5 },
+        { "id": "rainwater",     "label": "Collected rainwater",               "xp": 8,  "co2": 0.8 },
+        { "id": "no-lawn-mow",   "label": "Skipped mowing (let it grow)",      "xp": 5,  "co2": 0.4 },
+        { "id": "bird-feeder",   "label": "Set up bird/wildlife habitat",      "xp": 6,  "co2": 0.3 }
       ]
     }
   ]
