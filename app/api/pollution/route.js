@@ -22,8 +22,12 @@ export async function GET(request) {
         `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(q)}&limit=1&appid=${apiKey}`
       );
       const geoData = await geoRes.json();
+      // OWM returns an error object (with .message) when the key is bad
+      if (geoData?.message) {
+        return NextResponse.json({ error: `OpenWeatherMap: ${geoData.message}` }, { status: 401 });
+      }
       if (!Array.isArray(geoData) || !geoData.length) {
-        return NextResponse.json({ error: 'Location not found' }, { status: 404 });
+        return NextResponse.json({ error: `Location "${q}" not found. Try a city name like "London" or "New York".` }, { status: 404 });
       }
       lat = geoData[0].lat;
       lon = geoData[0].lon;
@@ -44,6 +48,14 @@ export async function GET(request) {
     const pollData = await pollRes.json();
     const weatherData = await weatherRes.json();
 
+    // Surface OWM auth/activation errors instead of crashing
+    if (pollData?.message) {
+      return NextResponse.json({ error: `OpenWeatherMap: ${pollData.message}` }, { status: pollRes.status });
+    }
+    if (!pollData.list?.[0]) {
+      return NextResponse.json({ error: 'No air quality data returned for this location.' }, { status: 502 });
+    }
+
     return NextResponse.json({
       lat: parseFloat(lat),
       lon: parseFloat(lon),
@@ -57,7 +69,7 @@ export async function GET(request) {
         description: weatherData.weather?.[0]?.description ?? null,
       },
     });
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: `Server error: ${e.message}` }, { status: 500 });
   }
 }
