@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/scan',       label: 'Scan',      emoji: '📷' },
   { href: '/dashboard',  label: 'Impact',    emoji: '📊' },
   { href: '/transport',  label: 'Transport', emoji: '🚲' },
+  { href: '/pollution',  label: 'Pollution', emoji: '🌫️' },
 ];
 
 export default function Navbar() {
