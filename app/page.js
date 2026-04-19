@@ -161,21 +161,26 @@ export default function HomePage() {
 
       {/* ── Action dock ──────────────────────────────────────────────── */}
       <div className="action-dock">
-        {actionsData.categories.map(cat => (
-          <button
-            key={cat.id}
-            className={`dock-btn ${activePanel===cat.id?'dock-btn--active':''}`}
-            style={{ '--dc': cat.color }}
-            onClick={() => setActivePanel(prev => prev === cat.id ? null : cat.id)}
-          >
-            <span className="dock-icon">{cat.emoji}</span>
-            <span className="dock-label">{cat.name.slice(0,4).toUpperCase()}</span>
-          </button>
-        ))}
-        <div className="dock-divider" />
-        <Link href="/log"       className="dock-btn dock-btn--nav"><span className="dock-icon">📋</span><span className="dock-label">LOG</span></Link>
-        <Link href="/scan"      className="dock-btn dock-btn--nav"><span className="dock-icon">📷</span><span className="dock-label">SCAN</span></Link>
-        <Link href="/dashboard" className="dock-btn dock-btn--nav"><span className="dock-icon">📊</span><span className="dock-label">STAT</span></Link>
+        <div className="dock-cat-row">
+          {actionsData.categories.map(cat => (
+            <button
+              key={cat.id}
+              className={`dock-btn ${activePanel===cat.id?'dock-btn--active':''}`}
+              style={{ '--dc': cat.color }}
+              onClick={() => setActivePanel(prev => prev === cat.id ? null : cat.id)}
+            >
+              <span className="dock-icon">{cat.emoji}</span>
+              <span className="dock-label">{cat.name.slice(0,4).toUpperCase()}</span>
+            </button>
+          ))}
+        </div>
+        <div className="dock-nav-row">
+          <Link href="/log"        className="dock-btn dock-btn--nav"><span className="dock-icon">📋</span><span className="dock-label">LOG</span></Link>
+          <Link href="/scan"       className="dock-btn dock-btn--nav"><span className="dock-icon">📷</span><span className="dock-label">SCAN</span></Link>
+          <Link href="/dashboard"  className="dock-btn dock-btn--nav"><span className="dock-icon">📊</span><span className="dock-label">STATS</span></Link>
+          <Link href="/transport"  className="dock-btn dock-btn--nav"><span className="dock-icon">🚲</span><span className="dock-label">TRAVEL</span></Link>
+          <Link href="/pollution"  className="dock-btn dock-btn--nav"><span className="dock-icon">🌫️</span><span className="dock-label">AIR</span></Link>
+        </div>
       </div>
 
       {/* ── Action panel ─────────────────────────────────────────────── */}
