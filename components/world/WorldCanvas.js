@@ -37,11 +37,20 @@ const FURNITURE = [
     { type: 'trashcan', x: 1100, y: 600, w: 50, h: 50, rot: [0, 0, 0] },
     { type: 'coatRack', x: 950, y: 950, w: 50, h: 50, rot: [0, 0, 0] },
 
-    // Outdoor Nature near Solar
-    { type: 'tree_oak', x: -250, y: 800, w: 100, h: 100, rot: [0, 0, 0] },
-    { type: 'tree_pineDefaultA', x: -300, y: 600, w: 100, h: 100, rot: [0, 0, 0] },
-    { type: 'plant_bushLarge', x: -150, y: 850, w: 50, h: 50, rot: [0, 0, 0] },
-    { type: 'rock_largeA', x: -200, y: 700, w: 50, h: 50, rot: [0, 0, 0] }
+    // Outdoor Nature & Garden Area
+    { type: 'tree_oak', x: -350, y: 700, w: 100, h: 100, rot: [0, 0, 0] },
+    { type: 'tree_pineDefaultA', x: -350, y: 900, w: 100, h: 100, rot: [0, 0, 0] },
+    { type: 'rock_largeA', x: -400, y: 800, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'plant_bushLarge', x: -100, y: 750, w: 50, h: 50, rot: [0, 0, 0] },
+    
+    { type: 'crops_dirtRow', x: -250, y: 800, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'crops_dirtRow', x: -250, y: 850, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'crops_dirtRow', x: -200, y: 800, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'crops_dirtRow', x: -200, y: 850, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'crop_carrot', x: -250, y: 800, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'crop_pumpkin', x: -200, y: 850, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'flower_purpleA', x: -150, y: 850, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'flower_redA', x: -150, y: 800, w: 50, h: 50, rot: [0, 0, 0] }
 ];
 
 // Interactive Task Zones anchored to the house furniture
@@ -92,7 +101,7 @@ function TexturedFloor() {
 }
 
 // Preload models
-['character-male-a', 'bedDouble', 'tableCoffeeSquare', 'kitchenCabinet', 'kitchenFridgeLarge', 'loungeDesignSofa', 'cabinetTelevisionDoors', 'televisionModern', 'tree_pineDefaultA', 'lampSquareFloor', 'laptop', 'trashcan', 'coatRack', 'fence_simple', 'grass', 'grass_large', 'tree_small', 'tree_oak', 'tree_detailed', 'tree_pineRoundA', 'rock_largeA', 'rock_tallA', 'plant_bushLarge', 'plant_bush', 'mushroom_redGroup', 'mushroom_tanGroup', 'stump_old', 'log'].forEach(m => {
+['character-male-a', 'bedDouble', 'tableCoffeeSquare', 'kitchenCabinet', 'kitchenFridgeLarge', 'loungeDesignSofa', 'cabinetTelevisionDoors', 'televisionModern', 'tree_pineDefaultA', 'lampSquareFloor', 'laptop', 'trashcan', 'coatRack', 'fence_simple', 'grass', 'grass_large', 'tree_small', 'tree_oak', 'tree_detailed', 'tree_pineRoundA', 'rock_largeA', 'rock_tallA', 'plant_bushLarge', 'plant_bush', 'mushroom_redGroup', 'mushroom_tanGroup', 'stump_old', 'log', 'crops_dirtRow', 'crop_carrot', 'crop_pumpkin', 'flower_purpleA', 'flower_redA'].forEach(m => {
     useGLTF.preload(`/assets/models/${m}.glb`);
 });
 
