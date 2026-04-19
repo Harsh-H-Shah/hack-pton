@@ -22,7 +22,7 @@ const WALLS = [
 // Furniture layout mapped to 3D with rotations (Optimized count)
 const FURNITURE = [
     { type: 'bedDouble', x: 300, y: 240, w: 120, h: 160, rot: [0, Math.PI / 2, 0] },
-    { type: 'tableCoffeeSquare', x: 750, y: 250, w: 100, h: 100, rot: [0, 0, 0] },
+    { type: 'tableCoffeeSquare', x: 1100, y: 750, w: 100, h: 100, rot: [0, 0, 0] },
     
     { type: 'kitchenCabinet', x: 1050, y: 220, w: 100, h: 100, rot: [0, Math.PI, 0] },
     { type: 'kitchenCabinet', x: 1150, y: 220, w: 100, h: 100, rot: [0, Math.PI, 0] },
@@ -34,7 +34,7 @@ const FURNITURE = [
     
     // Task-specific furniture
     { type: 'laptop', x: 750, y: 250, w: 100, h: 100, yOffset: 0.6, rot: [0, Math.PI, 0] },
-    { type: 'trashcan', x: 900, y: 220, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'trashcan', x: 1100, y: 600, w: 50, h: 50, rot: [0, 0, 0] },
     { type: 'coatRack', x: 950, y: 950, w: 50, h: 50, rot: [0, 0, 0] }
 ];
 
@@ -42,8 +42,8 @@ const FURNITURE = [
 const ZONES = [
     { x: 5.2, z: 8.5, cat: 'energy', label: 'Energy Hub' },
     { x: 12.4, z: 4.0, cat: 'food', label: 'Smart Fridge' },
-    { x: 9.5, z: 2.7, cat: 'waste', label: 'Recycling' },
-    { x: 8.0, z: 3.0, cat: 'shopping', label: 'Eco Market' },
+    { x: 11.0, z: 6.0, cat: 'waste', label: 'Recycling' },
+    { x: 11.0, z: 7.5, cat: 'shopping', label: 'Eco Market' },
     { x: 9.8, z: 10.0, cat: 'transport', label: 'EV Keys' }
 ];
 
