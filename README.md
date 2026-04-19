@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Live, Laugh, Plant 🌱
 
-## Getting Started
+**Live, Laugh, Plant** (formerly EcoVerse) is a gamified sustainability web app that lets users explore a 3D world, scan products with OCR, and track their eco‑friendly actions.  The project includes:
 
-First, run the development server:
+- A **Next.js** front‑end with a retro‑styled 3D environment built on `react‑three‑fiber` and `@react‑three/drei`.
+- An **AI‑powered scanner** powered by Google Gemini that returns structured carbon‑emission data.
+- A **Photon agent** that listens for iMessage events and replies with a simple "hello world" (can be extended to categorize actions).
+- A **rebranded UI** using modern `Inter` and `Outfit` fonts for high visibility.
+
+## Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Clone the repo (if you haven't already)
+git clone https://github.com/Harsh-H-Shah/hack-pton.git
+cd hack-pton
+
+# 2. Install dependencies
+npm install
+
+# 3. Set up environment variables
+cp .env.example .env.local   # copy the example file
+# Edit .env.local and fill in your:
+#   PHOTON_PROJECT_ID, PHOTON_SECRET, IMESSAGE_DEVICE_ID (e.g. iPhone8)
+#   (optional) IMESSAGE_APP_NAME, GEMINI_API_KEY
+
+# 4. Run the web app
+npm run dev   # starts Next.js on http://localhost:3000
+
+# 5. Run the Photon iMessage agent (in a separate terminal)
+npm run agent
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project Structure
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```
+HackPrinceton/
+├─ app/                # Next.js pages & layout
+│  ├─ globals.css      # Global CSS with new font tokens
+│  └─ …                # other pages (dashboard, scan, etc.)
+├─ components/        # React components (WorldCanvas, Navbar, …)
+├─ lib/               # Gemini helper utilities
+├─ agent/             # Photon iMessage agent (index.js)
+├─ .env.local         # Private env vars (not committed)
+└─ README.md          # <‑‑ you are reading this
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Agent Details
 
-## Learn More
+The agent lives in `agent/index.js` and uses the **spectrum‑ts** library to connect to Photon.  It loads configuration from `.env.local` and replies to any incoming iMessage text with `"hello world"`.  To extend it:
 
-To learn more about Next.js, take a look at the following resources:
+1. Implement your own `categorizeAndRespond` function (see the commented‑out code in `index.js`).
+2. Replace the simple `await space.send("hello world")` with the response from that function.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Styling & Branding
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Fonts: `Inter` (body) and `Outfit` (retro UI) are loaded via `next/font/google` in `app/layout.js`.
+- Colors: Dark‑mode palette with high contrast for readability.
+- All occurrences of **EcoVerse** have been replaced with **Live, Laugh, Plant**.
 
-## Deploy on Vercel
+## Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Feel free to open issues or submit pull requests.  For new features, follow the existing design system and keep the UI consistent with the high‑visibility guidelines.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+MIT © Harsh Shah

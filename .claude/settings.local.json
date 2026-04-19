@@ -30,7 +30,18 @@
       "Bash(node --check /Users/harshshah/Desktop/Projects/HackPrinceton/components/world/WorldCanvas.js)",
       "Bash(node --check /Users/harshshah/Desktop/Projects/HackPrinceton/app/page.js)",
       "Bash(node --check /Users/harshshah/Desktop/Projects/HackPrinceton/app/layout.js)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:p[k] for k in ['main','module','exports','type'] if k in p}, indent=2\\)\\)\")",
+      "Bash(jobs -l)",
+      "Bash(node -e ' *)",
+      "Bash(node agent/index.js)",
+      "Bash(echo \"PID: $!\")",
+      "Read(//tmp/**)",
+      "Bash(node -e \"const Database = require\\('/Users/harshshah/Desktop/Projects/HackPrinceton/node_modules/better-sqlite3'\\); new Database\\('/Users/harshshah/Library/Messages/chat.db', {readonly:true}\\); console.log\\('ok'\\)\")",
+      "WebFetch(domain:docs.photon.codes)",
+      "Bash(python3 -m json.tool)",
+      "Bash(node /Users/harshshah/Desktop/Projects/HackPrinceton/agent/index.js)",
+      "Bash(node --input-type=module)"
     ]
   }
 }

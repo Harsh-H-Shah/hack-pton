@@ -2,10 +2,12 @@
   "name": "ecoverse",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "agent": "node agent/index.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -14,6 +16,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.0",
     "better-sqlite3": "^12.9.0",
+    "dotenv": "^17.4.2",
     "gsap": "^3.15.0",
     "lottie-react": "^2.4.1",
     "next": "16.2.4",
@@ -21,6 +24,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.8.1",
+    "spectrum-ts": "^0.4.0",
     "three": "^0.184.0"
   }
 }
