@@ -208,11 +208,11 @@ export default function HomePage() {
           ))}
         </div>
         <div className="dock-nav-row">
-          <Link href="/log"        className="dock-btn dock-btn--nav"><span className="dock-icon">📋</span><span className="dock-label">LOG</span></Link>
-          <Link href="/scan"       className="dock-btn dock-btn--nav"><span className="dock-icon">📷</span><span className="dock-label">SCAN</span></Link>
-          <Link href="/dashboard"  className="dock-btn dock-btn--nav"><span className="dock-icon">📊</span><span className="dock-label">STATS</span></Link>
-          <Link href="/transport"  className="dock-btn dock-btn--nav"><span className="dock-icon">🚲</span><span className="dock-label">TRAVEL</span></Link>
-          <Link href="/pollution"  className="dock-btn dock-btn--nav"><span className="dock-icon">🌫️</span><span className="dock-label">AIR</span></Link>
+          <Link href="/log"        className="dock-nav-link"><span className="dock-nav-icon">📋</span>Log</Link>
+          <Link href="/scan"       className="dock-nav-link"><span className="dock-nav-icon">📷</span>Scan</Link>
+          <Link href="/dashboard"  className="dock-nav-link"><span className="dock-nav-icon">📊</span>Stats</Link>
+          <Link href="/transport"  className="dock-nav-link"><span className="dock-nav-icon">🚲</span>Travel</Link>
+          <Link href="/pollution"  className="dock-nav-link"><span className="dock-nav-icon">🌫️</span>Air</Link>
         </div>
       </div>
 
