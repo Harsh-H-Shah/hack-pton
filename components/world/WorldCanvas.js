@@ -80,66 +80,71 @@ function GLTFModel({ name, position, rotation = [0, 0, 0], scale = 1 }) {
 function TexturedGround({ tierLevel }) {
     const grassMap = useTexture('/assets/textures/grass.png');
     grassMap.wrapS = grassMap.wrapT = THREE.RepeatWrapping;
-    grassMap.repeat.set(2, 2); // Scale texture appropriately for small patches
+    grassMap.repeat.set(50, 50);
 
-    const meshRef = useRef();
+    const [alphaMap, setAlphaMap] = useState(null);
 
-    const GRASS_PATCHES = useMemo(() => {
-        const patches = [];
+    useEffect(() => {
+        // We "paste" all the patches onto a single static 2D canvas
+        // This creates ONE single flat ground layer, impossible to Z-fight or lag.
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+        
+        // Base is fully transparent (black = 0 alpha)
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, 1024, 1024);
+        
+        const numPatches = Math.floor((tierLevel || 1) * 33);
         let seed = 12345;
         const random = () => {
             const x = Math.sin(seed++) * 10000;
             return x - Math.floor(x);
         };
-        for(let i = 0; i < 200; i++) {
-            const x = -10 + random() * 40;
-            const z = -5 + random() * 30;
+        
+        // Draw white circles where grass should appear (white = 1 alpha)
+        ctx.fillStyle = 'white';
+        for(let i = 0; i < numPatches; i++) {
+            const worldX = -10 + random() * 40;
+            const worldZ = -5 + random() * 30;
             const radius = 1.5 + random() * 3.5;
-            patches.push({ x, z, radius });
-        }
-        return patches;
-    }, []);
-
-    // Show more patches as tier increases
-    const numPatches = Math.floor((tierLevel || 1) * 33);
-
-    useEffect(() => {
-        if (!meshRef.current) return;
-        const dummy = new THREE.Object3D();
-        
-        // Render visible patches
-        for (let i = 0; i < numPatches; i++) {
-            const p = GRASS_PATCHES[i];
-            dummy.position.set(p.x, -0.09 + i * 0.00005, p.z);
-            dummy.rotation.set(-Math.PI / 2, 0, 0);
-            dummy.scale.set(p.radius, p.radius, 1);
-            dummy.updateMatrix();
-            meshRef.current.setMatrixAt(i, dummy.matrix);
+            
+            // Map 3D plane coordinates (-250 to 250) to Canvas (0 to 1024)
+            const cx = ((worldX + 250) / 500) * 1024;
+            const cy = ((worldZ + 250) / 500) * 1024;
+            const cr = (radius / 500) * 1024;
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, cr, 0, 2 * Math.PI);
+            ctx.fill();
         }
         
-        // Hide unused patches (scale to 0)
-        for (let i = numPatches; i < 200; i++) {
-            dummy.position.set(0, 0, 0);
-            dummy.scale.set(0, 0, 0);
-            dummy.updateMatrix();
-            meshRef.current.setMatrixAt(i, dummy.matrix);
-        }
-        
-        meshRef.current.instanceMatrix.needsUpdate = true;
-    }, [numPatches, GRASS_PATCHES]);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.anisotropy = 4;
+        setAlphaMap(tex);
+    }, [tierLevel]);
 
     return (
         <group>
             {/* Base Dirt Ground */}
             <Plane args={[500, 500]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-                <meshStandardMaterial roughness={1} color="#604632" />
+                <meshStandardMaterial roughness={1} color="#A67B5B" />
             </Plane>
             
-            {/* Grass Patches InstancedMesh (1 Draw Call instead of 200) */}
-            <instancedMesh ref={meshRef} args={[null, null, 200]}>
-                <circleGeometry args={[1, 16]} />
-                <meshStandardMaterial map={grassMap} roughness={1} color="#aadd88" />
-            </instancedMesh>
+            {/* Single Grass Overlay Layer */}
+            {alphaMap && (
+                <Plane args={[500, 500]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.09, 0]}>
+                    <meshStandardMaterial 
+                        map={grassMap} 
+                        alphaMap={alphaMap}
+                        transparent={true} 
+                        alphaTest={0.5}
+                        roughness={1} 
+                        color="#aadd88" 
+                    />
+                </Plane>
+            )}
         </group>
     );
 }
