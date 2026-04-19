@@ -1,16 +1,29 @@
 import './globals.css';
-import Navbar from '@/components/Navbar';
+import { Inter, Outfit } from 'next/font/google';
+import ConditionalNavbar from '@/components/ConditionalNavbar';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+  display: 'swap',
+});
 
 export const metadata = {
-  title: 'EcoVerse — Your Sustainable World',
+  title: 'Live, Laugh, Plant — Your Sustainable World',
   description: 'Log sustainable choices. Watch your world grow.',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body>
-        <Navbar />
+        <ConditionalNavbar />
         <main className="main-content">
           {children}
         </main>

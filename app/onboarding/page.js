@@ -31,7 +31,7 @@ export default function OnboardingPage() {
     <div className="onboarding-page">
       <div className="onboarding-header">
         <span className="onboarding-logo">🌿</span>
-        <h1>Welcome to EcoVerse</h1>
+        <h1>Welcome to Live, Laugh, Plant</h1>
         <p>Your sustainable choices build a living world. Choose your environment to begin.</p>
       </div>
       <div className="env-grid">

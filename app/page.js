@@ -1,28 +1,29 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import TierProgress from '@/components/ui/TierProgress';
-import CelebrationModal from '@/components/ui/CelebrationModal';
-import ActionCard from '@/components/actions/ActionCard';
+import actionsData from '@/data/actions.json';
 
-// PixiJS must be client-only (no SSR)
-const WorldScene = dynamic(() => import('@/components/world/WorldScene'), { ssr: false });
+const WorldCanvas = dynamic(() => import('@/components/world/WorldCanvas'), { ssr: false });
 
-const QUICK_ACTIONS = [
-  { id: 'bike',    category: { emoji: '🚲', color: '#10b981' }, label: 'Biked today', xp: 15 },
-  { id: 'veggie',  category: { emoji: '🥗', color: '#f59e0b' }, label: 'Vegetarian meal', xp: 8 },
-  { id: 'recycle', category: { emoji: '♻️', color: '#8b5cf6' }, label: 'Recycled',     xp: 5 },
-  { id: 'walk',    category: { emoji: '👟', color: '#10b981' }, label: 'Walked today', xp: 10 },
-];
+const CAT_COLORS = {
+  transport: '#40a0f0', food: '#f0a020', energy: '#f0e020',
+  waste: '#a060f0', shopping: '#f040a0', all: '#10d870',
+  door: '#f0a020',
+};
 
 export default function HomePage() {
   const router = useRouter();
-  const [world, setWorld] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [world, setWorld]       = useState(null);
+  const [stats, setStats]       = useState(null);
+  const [activePanel, setActivePanel] = useState(null);
+  const [nearZone, setNearZone] = useState(null);
+  const [toasts, setToasts]     = useState([]);
   const [celebration, setCelebration] = useState(null);
-  const [loggedState, setLoggedState] = useState({});
+  const [logging, setLogging]   = useState({});
+  const [isInterior, setIsInterior] = useState(false);
+  const toastIdRef = useRef(0);
 
   useEffect(() => {
     const env = localStorage.getItem('ecoverse-env');
@@ -32,96 +33,230 @@ export default function HomePage() {
 
   const fetchData = async () => {
     const [w, s] = await Promise.all([
-      fetch('/api/world?userId=default-user').then(r => r.json()),
-      fetch('/api/stats?userId=default-user').then(r => r.json()),
+      fetch('/api/world?userId=default-user').then(r => r.json()).catch(() => null),
+      fetch('/api/stats?userId=default-user').then(r => r.json()).catch(() => null),
     ]);
-    setWorld(w);
-    setStats(s);
+    if (w) setWorld(w);
+    if (s) setStats(s);
   };
+
+  const addToast = useCallback((msg, color = '#10d870') => {
+    const id = ++toastIdRef.current;
+    setToasts(prev => [...prev, { id, msg, color }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 2800);
+  }, []);
 
   const logAction = async (actionId) => {
-    setLoggedState(prev => ({ ...prev, [actionId]: true }));
-    setTimeout(() => setLoggedState(prev => ({ ...prev, [actionId]: false })), 1200);
-
-    const res = await fetch('/api/actions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ actionId, userId: 'default-user' }),
-    });
-    const data = await res.json();
-    if (data.tierChanged) {
-      setCelebration(data.newTier);
+    if (logging[actionId]) return;
+    setLogging(prev => ({ ...prev, [actionId]: true }));
+    try {
+      const res = await fetch('/api/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actionId, userId: 'default-user' }),
+      });
+      const data = await res.json();
+      addToast(`+${data.xp ?? '?'} XP`, '#10d870');
+      if (data.tierChanged) setCelebration(data.newTier);
+      fetchData();
+    } catch {
+      addToast('FAILED', '#f03050');
+    } finally {
+      setLogging(prev => ({ ...prev, [actionId]: false }));
     }
-    fetchData();
   };
 
-  const handleCelebrationClose = () => {
-    setCelebration(null);
-    fetchData();
-  };
+  const handleZoneClick = useCallback((cat) => {
+    setActivePanel(cat === 'all' ? 'transport' : cat);
+  }, []);
+
+  const handleNearZone = useCallback((cat) => {
+    setNearZone(cat);
+  }, []);
+
+  const handleEnterExit = useCallback((entering) => {
+    setIsInterior(entering);
+    if (entering) addToast('ENTERED HOME', '#f0a020');
+    else addToast('OUTSIDE', '#10d870');
+  }, [addToast]);
+
+  const tier       = world?.tier      ?? { id:1, name:'Barren', emoji:'🌫️' };
+  const nextTier   = world?.nextTier;
+  const totalXp    = stats?.user?.total_xp    ?? 0;
+  const co2Saved   = stats?.user?.total_co2_saved?.toFixed(1) ?? '0';
+  const streak     = stats?.user?.streak_days ?? 0;
+  const actionsToday = stats?.actionsToday ?? 0;
+  const tierMin    = tier.minXp   ?? 0;
+  const tierMax    = nextTier?.minXp ?? tierMin + 100;
+  const progress   = Math.min(100, Math.max(0, ((totalXp - tierMin) / (tierMax - tierMin)) * 100));
+  const categoryCounts = stats?.categoryCounts ?? {};
+
+  const activeCatData = actionsData.categories.find(c => c.id === activePanel);
+  const currentEnv = isInterior && (world?.environment ?? 'home') === 'home'
+    ? 'home-interior'
+    : (world?.environment ?? 'home');
 
   return (
-    <div className="home-page">
-      {/* Hero world */}
-      <div className="world-container">
-        <WorldScene
-          environment={world?.environment ?? 'home'}
-          tier={world?.tier ?? { id: 1, name: 'Barren', emoji: '🌫️' }}
+    <div className="game-screen">
+        <WorldCanvas
+          environment={currentEnv}
+          tier={tier}
           unlockedElements={world?.unlockedElements ?? []}
+          categoryCounts={categoryCounts}
+          onZoneClick={handleZoneClick}
+          onNearZone={handleNearZone}
+          onEnterExit={handleEnterExit}
+          onPlayerMove={() => setActivePanel(prev => prev !== null ? null : prev)}
         />
+
+      {/* ── Top-left HUD ─────────────────────────────────────────────── */}
+      <div className="hud-tl">
+        <div className="game-logo">
+          <span className="game-logo-leaf">🌿</span>
+          <span>LIVE, LAUGH, PLANT</span>
+        </div>
+        <div className="tier-badge-hud">
+          <span className="tier-emoji">{tier.emoji}</span>
+          <div>
+            <div className="tier-name-hud">{tier.name.toUpperCase()}</div>
+            <div className="tier-sub">TIER {tier.id} / 6</div>
+          </div>
+        </div>
       </div>
 
-      {/* Tier progress */}
-      {stats && (
-        <TierProgress
-          currentXp={stats.user.total_xp}
-          tier={stats.tier}
-          nextTier={stats.nextTier}
-        />
-      )}
+      {/* ── Top-right HUD ────────────────────────────────────────────── */}
+      <div className="hud-tr">
+        <div className="xp-hud">
+          <div className="xp-hud-row">
+            <span className="xp-label">XP</span>
+            <span className="xp-val">{totalXp}</span>
+            {nextTier && <span className="xp-next">/ {nextTier.minXp}</span>}
+          </div>
+          <div className="xp-track">
+            <div className="xp-fill" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+        <div className="stats-hud">
+          <div className="stat-pill">🔥{streak}D</div>
+          <div className="stat-pill">🌱{co2Saved}KG</div>
+          <div className="stat-pill">✅{actionsToday}</div>
+        </div>
+      </div>
 
-      {/* Quick stats */}
-      {stats && (
-        <div className="stats-row">
-          <div className="stat-card">
-            <span className="stat-value">{stats.user.total_co2_saved.toFixed(1)}</span>
-            <span className="stat-label">kg CO₂ saved</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-value">{stats.user.streak_days}</span>
-            <span className="stat-label">day streak 🔥</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-value">{stats.actionsToday}</span>
-            <span className="stat-label">actions today</span>
-          </div>
+      {/* ── Controls ─────────────────────────────────────────────────── */}
+      <div className="controls-hint">
+        <span>WASD MOVE</span>
+        <span className="hint-sep">·</span>
+        <span>E/CLICK ACT</span>
+        {isInterior && <><span className="hint-sep">·</span><span>INSIDE HOME</span></>}
+      </div>
+
+      {/* ── Near-zone indicator ──────────────────────────────────────── */}
+      {nearZone && nearZone !== 'door' && (
+        <div className="near-zone-bar" style={{ '--zc': CAT_COLORS[nearZone] }}>
+          <span>{actionsData.categories.find(c=>c.id===nearZone)?.emoji}</span>
+          <span>PRESS <kbd>E</kbd> — {nearZone.toUpperCase()}</span>
         </div>
       )}
 
-      {/* Quick actions */}
-      <div className="quick-actions-section">
-        <h2 className="section-title">Quick Log</h2>
-        <div className="quick-actions-grid">
-          {QUICK_ACTIONS.map(qa => (
-            <ActionCard
-              key={qa.id}
-              action={qa}
-              category={qa.category}
-              onLog={logAction}
-              justLogged={loggedState[qa.id] ?? false}
-            />
-          ))}
-        </div>
-        <Link href="/log" className="btn-outline btn-full">
-          Log All Actions →
-        </Link>
+      {/* ── Action dock ──────────────────────────────────────────────── */}
+      <div className="action-dock">
+        {actionsData.categories.map(cat => (
+          <button
+            key={cat.id}
+            className={`dock-btn ${activePanel===cat.id?'dock-btn--active':''}`}
+            style={{ '--dc': cat.color }}
+            onClick={() => setActivePanel(prev => prev === cat.id ? null : cat.id)}
+          >
+            <span className="dock-icon">{cat.emoji}</span>
+            <span className="dock-label">{cat.name.slice(0,4).toUpperCase()}</span>
+          </button>
+        ))}
+        <div className="dock-divider" />
+        <Link href="/log"       className="dock-btn dock-btn--nav"><span className="dock-icon">📋</span><span className="dock-label">LOG</span></Link>
+        <Link href="/scan"      className="dock-btn dock-btn--nav"><span className="dock-icon">📷</span><span className="dock-label">SCAN</span></Link>
+        <Link href="/dashboard" className="dock-btn dock-btn--nav"><span className="dock-icon">📊</span><span className="dock-label">STAT</span></Link>
       </div>
 
-      <CelebrationModal
-        show={!!celebration}
-        newTier={celebration}
-        onClose={handleCelebrationClose}
-      />
+      {/* ── Action panel ─────────────────────────────────────────────── */}
+      {activePanel && activeCatData && (
+        <>
+          <div className="panel-backdrop" onClick={() => setActivePanel(null)} />
+          <div className="action-panel" style={{ '--pc': activeCatData.color, zIndex: 100 }}>
+            <div className="panel-header">
+              <span className="panel-icon">{activeCatData.emoji}</span>
+              <div>
+                <h2 className="panel-title">{activeCatData.name.toUpperCase()} ACTIONS</h2>
+                <p className="panel-sub">Walk near a zone and log your eco deed</p>
+              </div>
+              <button className="panel-close" onClick={() => setActivePanel(null)}>✕</button>
+            </div>
+            <div className="panel-grid">
+              {activeCatData.actions.map(action => (
+                <button
+                  key={action.id}
+                  className={`panel-card ${logging[action.id] ? 'panel-card--logging' : ''}`}
+                  style={{ '--ac': activeCatData.color }}
+                  disabled={!!logging[action.id]}
+                  onClick={() => { logAction(action.id); setActivePanel(null); }}
+                >
+                  <span className="panel-card-emoji">{activeCatData.emoji}</span>
+                  <span className="panel-card-label">{action.label}</span>
+                  <div className="panel-card-stats">
+                    <span className="panel-card-xp">+{action.xp} XP</span>
+                    <span className="panel-card-co2">−{action.co2}kg</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="panel-footer">
+              <Link href="/log" className="panel-more-link" onClick={() => setActivePanel(null)}>
+                ALL ACTIONS →
+              </Link>
+              <Link href="/transport" className="panel-more-link" onClick={() => setActivePanel(null)}>
+                TRANSPORT CALC →
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Toasts ───────────────────────────────────────────────────── */}
+      <div className="toast-stack">
+        {toasts.map(t => (
+          <div key={t.id} className="xp-toast" style={{ '--tc': t.color }}>
+            {t.msg}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Celebration ──────────────────────────────────────────────── */}
+      {celebration && (
+        <div className="celebration-overlay" onClick={() => { setCelebration(null); fetchData(); }}>
+          <div className="celebration-modal" onClick={e => e.stopPropagation()}>
+            <div className="confetti-container">
+              {Array.from({length:16},(_,i)=>(
+                <div key={i} className="confetti-piece"
+                  style={{
+                    left:`${(i*23+7)%100}%`,
+                    background:`hsl(${i*45},90%,60%)`,
+                    animationDelay:`${i*0.08}s`,
+                    width:`${4+i%4}px`, height:`${4+i%4}px`,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="celebration-tier-emoji">{celebration.emoji}</div>
+            <div className="celebration-title">TIER UP!</div>
+            <div className="celebration-tier-name">{celebration.name.toUpperCase()}</div>
+            <p className="celebration-desc">{celebration.description}</p>
+            <button className="btn-primary celebration-btn"
+              onClick={() => { setCelebration(null); fetchData(); }}>
+              EXPLORE NEW WORLD
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

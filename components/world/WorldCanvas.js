@@ -1,270 +1,358 @@
 'use client';
-import { useRef, useEffect, useCallback } from 'react';
-import { WORLD_ELEMENTS } from '@/lib/worldElements';
+import React, { useRef, useState, useEffect, Suspense, useMemo } from 'react';
+import * as THREE from 'three';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useGLTF, Environment, Text, Box, Plane, Float, Clone, useTexture, Loader } from '@react-three/drei';
 
-// ── Tier-based visual config ────────────────────────────────────────────────
-const TIER_SKY = [
-  { top: '#2a2a3c', bot: '#3a3a52' }, // 1 Barren
-  { top: '#3a5040', bot: '#557060' }, // 2 Stirring
-  { top: '#3a72b0', bot: '#5a9ed5' }, // 3 Growing
-  { top: '#2080c8', bot: '#87ceeb' }, // 4 Thriving
-  { top: '#1060b8', bot: '#60b0e8' }, // 5 Flourishing
-  { top: '#e87020', bot: '#f0c040' }, // 6 Eden (golden hour)
-];
-const TIER_GROUND = ['#5a4a28','#6a6a30','#4a7a2a','#2a6820','#1a5818','#104810'];
-const TIER_SMOG   = [0.55, 0.38, 0.18, 0.05, 0, 0];
+const TILE_SIZE = 100;
 
-// ── Building draw functions ─────────────────────────────────────────────────
-function drawHome(ctx, tierId, W, H) {
-  const T  = tierId - 1;
-  const wall   = T >= 3 ? '#f0e4c8' : T >= 1 ? '#c8b890' : '#8a7860';
-  const roof   = T >= 3 ? '#b83020' : T >= 1 ? '#7a3a10' : '#4a2810';
-  const door   = '#4a2a0a';
-  const win    = T >= 2 ? '#a8d8f0' : '#606070';
-  const glow   = T >= 4 ? '#ffffa0' : win;
-
-  // Main wall
-  ctx.fillStyle = wall;
-  ctx.fillRect(260, 220, 280, 150);
-  // Roof
-  ctx.beginPath(); ctx.moveTo(245, 222); ctx.lineTo(400, 125); ctx.lineTo(555, 222);
-  ctx.closePath(); ctx.fillStyle = roof; ctx.fill();
-  // Chimney
-  ctx.fillStyle = wall; ctx.fillRect(468, 138, 22, 58);
-  // Door
-  ctx.fillStyle = door; ctx.beginPath();
-  ctx.roundRect(382, 302, 36, 68, 3); ctx.fill();
-  // Windows
-  ctx.fillStyle = glow;
-  ctx.beginPath(); ctx.roundRect(288, 248, 52, 40, 3); ctx.fill();
-  ctx.beginPath(); ctx.roundRect(460, 248, 52, 40, 3); ctx.fill();
-  // Window glow at high tiers
-  if (T >= 4) {
-    ctx.save(); ctx.globalAlpha = 0.3;
-    const grd = ctx.createRadialGradient(400, 260, 10, 400, 260, 140);
-    grd.addColorStop(0, '#ffffaa'); grd.addColorStop(1, 'transparent');
-    ctx.fillStyle = grd; ctx.fillRect(260, 180, 280, 180);
-    ctx.restore();
-  }
-}
-
-function drawOffice(ctx, tierId, W, H) {
-  const T     = tierId - 1;
-  const wall  = T >= 3 ? '#c8e0f0' : T >= 1 ? '#90a8c0' : '#6a7a8a';
-  const glass = T >= 2 ? '#78c0e8' : '#506070';
-  const green = T >= 3 ? '#10b981' : '#336655';
-
-  // Tower body
-  ctx.fillStyle = wall; ctx.fillRect(300, 110, 200, 260);
-  // Top accent bar
-  ctx.fillStyle = green; ctx.fillRect(296, 106, 208, 10);
-  // Window grid
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 3; col++) {
-      ctx.fillStyle = glass;
-      ctx.beginPath();
-      ctx.roundRect(318 + col * 58, 128 + row * 44, 42, 32, 2); ctx.fill();
-    }
-  }
-  // Entry doors
-  ctx.fillStyle = glass; ctx.fillRect(362, 330, 76, 40);
-  // Green side stripes at tier 4+
-  if (T >= 3) {
-    ctx.save(); ctx.globalAlpha = 0.5;
-    ctx.fillStyle = '#10b981';
-    ctx.fillRect(300, 110, 8, 260); ctx.fillRect(492, 110, 8, 260);
-    ctx.restore();
-  }
-}
-
-function drawNeighborhood(ctx, tierId, W, H) {
-  const T = tierId - 1;
-  const house = T >= 3 ? '#e0c890' : T >= 1 ? '#b09870' : '#786850';
-  const roof  = T >= 3 ? '#802020' : T >= 1 ? '#4a2810' : '#302010';
-
-  const houses = [{x:145, w:140}, {x:515, w:150}];
-  houses.forEach(h => {
-    ctx.fillStyle = house; ctx.fillRect(h.x, 252, h.w, 118);
-    ctx.beginPath();
-    ctx.moveTo(h.x - 14, 254); ctx.lineTo(h.x + h.w/2, 178); ctx.lineTo(h.x + h.w + 14, 254);
-    ctx.closePath(); ctx.fillStyle = roof; ctx.fill();
-    // door
-    ctx.fillStyle = '#3a2010';
-    ctx.beginPath(); ctx.roundRect(h.x + h.w/2 - 14, 320, 28, 50, 2); ctx.fill();
-  });
-  // Centre path / park
-  ctx.save(); ctx.globalAlpha = 0.35;
-  ctx.fillStyle = T >= 2 ? '#88b840' : '#c0a840';
-  ctx.beginPath(); ctx.roundRect(300, 300, 200, 70, 8); ctx.fill();
-  ctx.restore();
-}
-
-const DRAW_BUILDING = { home: drawHome, office: drawOffice, neighborhood: drawNeighborhood };
-
-// ── Sun / Moon ──────────────────────────────────────────────────────────────
-function drawSun(ctx, tierId) {
-  if (tierId < 3) return;
-  const T = tierId - 1;
-  const alpha = Math.min(1, (T - 1) * 0.3);
-  const radius = T >= 5 ? 32 : 22;
-  const x = tierId === 6 ? 680 : 680;
-  const y = tierId === 6 ? 60  : 55;
-  ctx.save(); ctx.globalAlpha = alpha;
-  // Glow
-  const grd = ctx.createRadialGradient(x, y, 0, x, y, radius * 2.5);
-  grd.addColorStop(0, tierId === 6 ? '#fff0a0' : '#fff8c0');
-  grd.addColorStop(1, 'transparent');
-  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(x, y, radius * 2.5, 0, Math.PI*2); ctx.fill();
-  // Core
-  ctx.fillStyle = tierId === 6 ? '#ffdd40' : '#ffe88a';
-  ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI*2); ctx.fill();
-  ctx.restore();
-}
-
-// ── Smog ────────────────────────────────────────────────────────────────────
-function drawSmog(ctx, tierId, W, H) {
-  const alpha = TIER_SMOG[Math.min(5, tierId - 1)];
-  if (alpha <= 0) return;
-  ctx.save(); ctx.globalAlpha = alpha;
-  ctx.fillStyle = '#8a8a9a';
-  ctx.fillRect(0, 0, W, H);
-  ctx.restore();
-}
-
-// ── Clouds (drawn at offset provided by animation loop) ─────────────────────
-const CLOUD_DEFS = [
-  { baseX: 80,  y: 50, r: 30, speed: 0.35 },
-  { baseX: 350, y: 30, r: 42, speed: 0.22 },
-  { baseX: 620, y: 62, r: 26, speed: 0.28 },
+// House structural walls
+const WALLS = [
+    { x: 200, y: 150, w: 1100, h: 30 }, // North
+    { x: 200, y: 150, w: 30, h: 900 },  // West
+    { x: 1270, y: 150, w: 30, h: 930 }, // East
+    { x: 200, y: 1050, w: 400, h: 30 }, // South Left
+    { x: 900, y: 1050, w: 400, h: 30 }, // South Right
+    { x: 200, y: 550, w: 300, h: 30 }, // Bottom wall of bedroom
+    { x: 650, y: 150, w: 30, h: 300 }, // Right wall of bedroom
+    { x: 950, y: 150, w: 30, h: 300 }, // Right wall of middle room
+    { x: 650, y: 450, w: 200, h: 30 }, // Bottom wall of middle room
 ];
 
-function drawCloud(ctx, x, y, r, tierId) {
-  const color = tierId <= 2 ? '#8888a0' : '#ffffff';
-  const alpha = tierId <= 1 ? 0.4 : 0.85;
-  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
-  ctx.arc(x + r*1.1, y - r*0.3, r*0.75, 0, Math.PI*2);
-  ctx.arc(x - r*0.85, y - r*0.2, r*0.65, 0, Math.PI*2);
-  ctx.fill(); ctx.restore();
+// Furniture layout mapped to 3D with rotations (Optimized count)
+const FURNITURE = [
+    { type: 'bedDouble', x: 300, y: 240, w: 120, h: 160, rot: [0, Math.PI / 2, 0] },
+    { type: 'tableCoffeeSquare', x: 750, y: 250, w: 100, h: 100, rot: [0, 0, 0] },
+    
+    { type: 'kitchenCabinet', x: 1050, y: 220, w: 100, h: 100, rot: [0, Math.PI, 0] },
+    { type: 'kitchenCabinet', x: 1150, y: 220, w: 100, h: 100, rot: [0, Math.PI, 0] },
+    { type: 'kitchenFridgeLarge', x: 1200, y: 320, w: 80, h: 160, rot: [0, -Math.PI / 2, 0] },
+    
+    { type: 'loungeDesignSofa', x: 450, y: 750, w: 150, h: 150, rot: [0, 0, 0] },
+    { type: 'cabinetTelevisionDoors', x: 450, y: 950, w: 120, h: 120, rot: [0, Math.PI, 0] },
+    { type: 'televisionModern', x: 450, y: 950, w: 120, h: 120, yOffset: 0.6, rot: [0, Math.PI, 0] },
+    
+    // Task-specific furniture
+    { type: 'laptop', x: 750, y: 250, w: 100, h: 100, yOffset: 0.6, rot: [0, Math.PI, 0] },
+    { type: 'trashcan', x: 900, y: 220, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'coatRack', x: 950, y: 950, w: 50, h: 50, rot: [0, 0, 0] }
+];
+
+// Interactive Task Zones anchored to the house furniture
+const ZONES = [
+    { x: 5.2, z: 8.5, cat: 'energy', label: 'Energy Hub' },
+    { x: 12.4, z: 4.0, cat: 'food', label: 'Smart Fridge' },
+    { x: 9.5, z: 2.7, cat: 'waste', label: 'Recycling' },
+    { x: 8.0, z: 3.0, cat: 'shopping', label: 'Eco Market' },
+    { x: 9.8, z: 10.0, cat: 'transport', label: 'EV Keys' }
+];
+
+function rectTo3D(x, y, w, h) {
+    const scale = 1 / TILE_SIZE;
+    const cx = (x + w / 2) * scale;
+    const cz = (y + h / 2) * scale;
+    const sw = w * scale;
+    const sd = h * scale;
+    return { position: [cx, 0, cz], args: [sw, 1, sd] };
 }
 
-// ── Sprite cache ─────────────────────────────────────────────────────────────
-const imageCache = {};
-function loadImage(src) {
-  if (imageCache[src]) return imageCache[src];
-  const p = new Promise((resolve) => {
-    const img = new Image();
-    img.onload  = () => resolve(img);
-    img.onerror = () => resolve(null);  // graceful: just skip
-    img.src = src;
-  });
-  imageCache[src] = p;
-  return p;
+function GLTFModel({ name, position, rotation = [0, 0, 0], scale = 1 }) {
+    const { scene } = useGLTF(`/assets/models/${name}.glb`);
+    return <Clone object={scene} position={position} rotation={rotation} scale={scale} />;
 }
 
-// ── Main component ──────────────────────────────────────────────────────────
-export default function WorldCanvas({ environment = 'home', tier, unlockedElements = [] }) {
-  const canvasRef = useRef(null);
-  const rafRef    = useRef(null);
-  const cloudX    = useRef(CLOUD_DEFS.map(c => c.baseX));
-  const spritesRef = useRef({});   // loaded Image objects keyed by filename
-  const tierId = tier?.id ?? 1;
-
-  // Load all sprites needed for unlocked elements
-  useEffect(() => {
-    const filenames = [...new Set(
-      unlockedElements
-        .map(id => WORLD_ELEMENTS[id]?.sprite)
-        .filter(Boolean)
-    )];
-    Promise.all(
-      filenames.map(async f => {
-        const img = await loadImage(`/assets/kenney/${f}`);
-        if (img) spritesRef.current[f] = img;
-      })
+function TexturedGround() {
+    const grassMap = useTexture('/assets/textures/grass.png');
+    grassMap.wrapS = grassMap.wrapT = THREE.RepeatWrapping;
+    // Balanced repeat scaling
+    grassMap.repeat.set(50, 50);
+    return (
+        <Plane args={[500, 500]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+            <meshStandardMaterial map={grassMap} roughness={1} color="#aadd88" />
+        </Plane>
     );
-  }, [unlockedElements]);
+}
 
-  // Main draw function (called every rAF tick)
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
+function TexturedFloor() {
+    const woodMap = useTexture('/assets/textures/wood.png');
+    woodMap.wrapS = woodMap.wrapT = THREE.RepeatWrapping;
+    woodMap.repeat.set(5, 5);
+    return (
+        <Box position={[7.35, -0.05, 6]} args={[10.7, 0.1, 9]}>
+            <meshStandardMaterial map={woodMap} roughness={0.8} />
+        </Box>
+    );
+}
 
-    // Sky gradient
-    const sky = TIER_SKY[Math.min(5, tierId - 1)];
-    const skyGrd = ctx.createLinearGradient(0, 0, 0, H * 0.8);
-    skyGrd.addColorStop(0, sky.top);
-    skyGrd.addColorStop(1, sky.bot);
-    ctx.fillStyle = skyGrd;
-    ctx.fillRect(0, 0, W, H);
+// Preload models
+['character-male-a', 'bedDouble', 'tableCoffeeSquare', 'kitchenCabinet', 'kitchenFridgeLarge', 'loungeDesignSofa', 'cabinetTelevisionDoors', 'televisionModern', 'tree_pineDefaultA', 'lampSquareFloor', 'laptop', 'trashcan', 'coatRack', 'fence_simple', 'grass', 'grass_large', 'tree_small', 'tree_oak', 'tree_detailed', 'tree_pineRoundA', 'rock_largeA', 'rock_tallA', 'plant_bushLarge', 'plant_bush', 'mushroom_redGroup', 'mushroom_tanGroup', 'stump_old', 'log'].forEach(m => {
+    useGLTF.preload(`/assets/models/${m}.glb`);
+});
 
-    // Sun
-    drawSun(ctx, tierId);
+function Player({ positionRef, keysRef, onPlayerMove }) {
+    const groupRef = useRef();
+    const { camera } = useThree();
+    const targetCamPos = useRef(new THREE.Vector3());
+    const { scene } = useGLTF(`/assets/models/character-male-a.glb`);
 
-    // Clouds (animated)
-    CLOUD_DEFS.forEach((def, i) => {
-      drawCloud(ctx, cloudX.current[i], def.y, def.r, tierId);
+    // Initialize player position once to prevent React from resetting it on re-renders
+    useEffect(() => {
+        if (groupRef.current) {
+            groupRef.current.position.set(positionRef.current[0], 0, positionRef.current[1]);
+        }
+    }, [positionRef]);
+
+    useFrame((state, delta) => {
+        const speed = 7 * delta;
+        const keys = keysRef.current;
+        let vx = 0;
+        let vz = 0;
+        if (keys.ArrowLeft || keys.a) vx -= speed;
+        if (keys.ArrowRight || keys.d) vx += speed;
+        if (keys.ArrowUp || keys.w) vz -= speed;
+        if (keys.ArrowDown || keys.s) vz += speed;
+
+        // Normalize diagonal movement speed
+        if (vx !== 0 && vz !== 0) {
+            const length = Math.sqrt(vx * vx + vz * vz);
+            vx = (vx / length) * speed;
+            vz = (vz / length) * speed;
+        }
+
+        if (groupRef.current) {
+            let newX = groupRef.current.position.x + vx;
+            let newZ = groupRef.current.position.z + vz;
+            
+            // Physical Wall Collision Check
+            const wallCollision = (nx, nz) => {
+                const wPad = 0.2; // Smaller padding to prevent getting stuck in doorways
+                for (let w of WALLS) {
+                    const wx = w.x / TILE_SIZE;
+                    const wz = w.y / TILE_SIZE;
+                    const ww = w.w / TILE_SIZE;
+                    const wd = w.h / TILE_SIZE;
+                    if (nx > wx - wPad && nx < wx + ww + wPad && nz > wz - wPad && nz < wz + wd + wPad) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            // Independent axis collision for smooth sliding along walls
+            if (wallCollision(newX, groupRef.current.position.z)) newX = groupRef.current.position.x;
+            if (wallCollision(groupRef.current.position.x, newZ)) newZ = groupRef.current.position.z;
+            
+            // Yard Boundaries (Locked inside the fence)
+            const pad = 0.5;
+            if (newX < -5 + pad) newX = -5 + pad;
+            if (newX > 18 - pad) newX = 18 - pad;
+            if (newZ < -2 + pad) newZ = -2 + pad;
+            if (newZ > 16 - pad) newZ = 16 - pad;
+
+            groupRef.current.position.x = newX;
+            groupRef.current.position.z = newZ;
+            positionRef.current = [newX, newZ];
+
+            // Character rotation and procedural walk animation
+            if (vx !== 0 || vz !== 0) {
+                const angle = Math.atan2(vx, vz);
+                groupRef.current.rotation.y = angle;
+                
+                // Bobbing walk cycle
+                const time = state.clock.getElapsedTime();
+                groupRef.current.position.y = Math.abs(Math.sin(time * 15)) * 0.15;
+                groupRef.current.rotation.z = Math.sin(time * 15) * 0.05;
+                
+                if (onPlayerMove) onPlayerMove();
+            } else {
+                // Reset to standing still
+                groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, 0, 0.2);
+                groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, 0, 0.2);
+            }
+
+            // Lazy camera tracking so the character actually moves across the screen
+            targetCamPos.current.set(newX, 12, newZ + 12);
+            camera.position.lerp(targetCamPos.current, 0.1);
+            
+            // Lock the camera angle parallel to its position to prevent swinging
+            camera.lookAt(camera.position.x, 0, camera.position.z - 12);
+        }
     });
 
-    // Building
-    const buildFn = DRAW_BUILDING[environment] ?? drawHome;
-    buildFn(ctx, tierId, W, H);
+    return (
+        <group ref={groupRef}>
+            <primitive object={scene} scale={1.2} />
+        </group>
+    );
+}
 
-    // Ground
-    const groundColor = TIER_GROUND[Math.min(5, tierId - 1)];
-    ctx.fillStyle = groundColor;
-    ctx.fillRect(0, 368, W, H - 368);
-    // Ground highlight strip
-    ctx.save(); ctx.globalAlpha = 0.25;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 368, W, 8);
-    ctx.restore();
+export default function WorldCanvas({ environment = 'home', tier = 1, unlockedElements = [], categoryCounts = {}, onZoneClick, onNearZone, onEnterExit, onPlayerMove }) {
+    const keys = useRef({});
+    const playerPos = useRef([6.5, 12]);
+    const lastZone = useRef(null);
+    const localEnv = useRef(environment); // Strictly track local environment to prevent modal spam
 
-    // Unlocked sprites
-    unlockedElements.forEach(id => {
-      const el = WORLD_ELEMENTS[id];
-      if (!el) return;
-      const img = spritesRef.current[el.sprite];
-      if (!img) return;
-      const w = img.naturalWidth  * el.scale;
-      const h = img.naturalHeight * el.scale;
-      ctx.drawImage(img, el.x - w/2, el.y - h, w, h);
-    });
+    // Sync local environment if parent forces a change
+    useEffect(() => {
+        localEnv.current = environment;
+    }, [environment]);
 
-    // Smog overlay
-    drawSmog(ctx, tierId, W, H);
-  }, [environment, tierId, unlockedElements]);
+    // Generates the visual fence bounding box
+    const fencePerimeter = useMemo(() => {
+        const fences = [];
+        const minX = -5, maxX = 18;
+        const minZ = -2, maxZ = 16;
+        for (let x = minX; x <= maxX; x += 1.5) fences.push({ id: `n${x}`, x, z: minZ, rot: [0, 0, 0] });
+        for (let x = minX; x <= maxX; x += 1.5) fences.push({ id: `s${x}`, x, z: maxZ, rot: [0, Math.PI, 0] });
+        for (let z = minZ; z <= maxZ; z += 1.5) fences.push({ id: `w${z}`, x: minX, z, rot: [0, Math.PI / 2, 0] });
+        for (let z = minZ; z <= maxZ; z += 1.5) fences.push({ id: `e${z}`, x: maxX, z, rot: [0, -Math.PI / 2, 0] });
+        return fences;
+    }, []);
 
-  // Animation loop
-  useEffect(() => {
-    let last = performance.now();
+    // Procedural nature inside the yard
+    const yardNature = useMemo(() => {
+        const items = [];
+        // Add grass tufts, excluding the house interior
+        for(let i=0; i<30; i++) {
+            let tx = -4 + Math.random() * 20;
+            let tz = -1 + Math.random() * 15;
+            while (tx > 1.5 && tx < 13.5 && tz > 0.5 && tz < 11.5) {
+                tx = -4 + Math.random() * 20;
+                tz = -1 + Math.random() * 15;
+            }
+            items.push({
+                id: `g${i}`,
+                type: Math.random() > 0.5 ? 'grass' : 'grass_large',
+                x: tx,
+                z: tz,
+                scale: 1 + Math.random() * 0.5
+            });
+        }
+        return items;
+    }, []);
 
-    const loop = (now) => {
-      const delta = (now - last) / 16.67; // normalise to ~60fps
-      last = now;
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            keys.current[e.key] = true;
+            if (e.key.toLowerCase() === 'e' && lastZone.current) {
+                if (onZoneClick) onZoneClick(lastZone.current);
+            }
+        };
+        const handleKeyUp = (e) => (keys.current[e.key] = false);
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
 
-      // Move clouds
-      CLOUD_DEFS.forEach((def, i) => {
-        cloudX.current[i] += def.speed * delta;
-        if (cloudX.current[i] > 950) cloudX.current[i] = -170;
-      });
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const [px, pz] = playerPos.current;
+            let currentZone = null;
+            
+            // Check interaction zones directly near furniture
+            for (let z of ZONES) {
+                if (Math.hypot(px - z.x, pz - z.z) < 1.5) {
+                    currentZone = z.cat;
+                    break;
+                }
+            }
 
-      draw();
-      rafRef.current = requestAnimationFrame(loop);
-    };
+            if (currentZone !== lastZone.current) {
+                lastZone.current = currentZone;
+                if (onNearZone) onNearZone(currentZone);
+            }
+            
+            // Check house enter/exit (Entrance is around x:6.5, z:10.5)
+            const inside = px > 1.5 && px < 13.0 && pz > 1.0 && pz < 11.0;
+            const currentEnv = inside ? 'home' : 'outside';
 
-    rafRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [draw]);
+            if (currentEnv !== localEnv.current) {
+                localEnv.current = currentEnv; // Instantly lock it locally
+                if (onEnterExit) onEnterExit(currentEnv);
+            }
+        }, 200);
+        return () => clearInterval(interval);
+    }, [onNearZone, onEnterExit]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      width={800}
-      height={450}
-      style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 12 }}
-    />
-  );
+    return (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -10, backgroundColor: '#7dd3fc' }}>
+            <Canvas gl={{ antialias: false, powerPreference: 'high-performance' }} dpr={1} camera={{ position: [6.5, 12, 24], fov: 45 }}>
+                <color attach="background" args={['#7dd3fc']} />
+                <ambientLight intensity={0.8} />
+                <directionalLight position={[20, 30, 10]} intensity={1.2} />
+                
+                <Suspense fallback={null}>
+                    <Player positionRef={playerPos} keysRef={keys} onPlayerMove={onPlayerMove} tier={tier} />
+
+                    {/* House Geometry */}
+                    <group>
+                        {/* Floor */}
+                        <TexturedFloor />
+                        
+                        {/* Walls */}
+                        {WALLS.map((w, i) => {
+                            const { position, args } = rectTo3D(w.x, w.y, w.w, w.h);
+                            return (
+                                <Box key={i} position={[position[0], 0.5, position[2]]} args={args}>
+                                    <meshStandardMaterial color="#64748B" roughness={0.9} />
+                                </Box>
+                            );
+                        })}
+
+                        {/* Furniture Models */}
+                        {FURNITURE.map((f, i) => {
+                            const { position } = rectTo3D(f.x, f.y, f.w, f.h);
+                            const yPos = f.yOffset ? f.yOffset : 0;
+                            return (
+                                <GLTFModel 
+                                    key={i} 
+                                    name={f.type} 
+                                    position={[position[0], yPos, position[2]]} 
+                                    rotation={f.rot} 
+                                    scale={1.2} // Reduced scale so it doesn't clip walls
+                                />
+                            );
+                        })}
+                    </group>
+
+                    {/* Outside Ground */}
+                    <TexturedGround />
+
+                    {/* Perimeter Fence */}
+                    <group>
+                        {fencePerimeter.map((f) => (
+                            <GLTFModel key={f.id} name="fence_simple" position={[f.x, 0, f.z]} rotation={f.rot} scale={1.5} />
+                        ))}
+                    </group>
+
+                    {/* Render Sustainability Zones */}
+                    <group>
+                        {ZONES.map((z, i) => {
+                            return (
+                                <group key={i} position={[z.x, 0, z.z]} onClick={() => onZoneClick && onZoneClick(z.cat)}>
+                                    <Float speed={2} rotationIntensity={0} floatIntensity={0.5}>
+                                        <Text position={[0, 1.5, 0]} fontSize={0.3} color="black" outlineWidth={0.02} outlineColor="white">
+                                            {z.label}
+                                        </Text>
+                                    </Float>
+                                </group>
+                            );
+                        })}
+                    </group>
+
+                    {/* Yard Nature Inside */}
+                    <group>
+                        {yardNature.map((n) => (
+                            <GLTFModel key={n.id} name={n.type} position={[n.x, 0, n.z]} scale={n.scale} />
+                        ))}
+                    </group>
+
+                </Suspense>
+            </Canvas>
+            <Loader />
+        </div>
+    );
 }

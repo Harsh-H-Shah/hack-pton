@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(gh repo *)",
+      "Bash(gh auth *)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(npx create-next-app@latest . --app --js --no-tailwind --no-src-dir --import-alias \"@/*\" --no-eslint --yes)",
+      "Read(//private/tmp/**)",
+      "Bash(npx create-next-app@latest ecoverse --app --js --no-tailwind --no-src-dir --import-alias \"@/*\" --no-eslint --yes)",
+      "Bash(rsync -a --exclude='.git' /tmp/ecoverse/ /Users/harshshah/Desktop/Projects/HackPrinceton/)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const p = require\\('./node_modules/@pixi/react/package.json'\\); console.log\\(p.version\\); console.log\\(Object.keys\\(require\\('./node_modules/@pixi/react/lib/index.mjs'\\) || {}\\).slice\\(0,20\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(curl -s http://localhost:3000/api/world?userId=default-user)",
+      "Bash(ipconfig getifaddr *)",
+      "Bash(curl -s \"http://localhost:3000/api/world?userId=default-user\")",
+      "Bash(curl -s -X POST \"http://localhost:3000/api/actions\" -H \"Content-Type: application/json\" -d '{\"actionId\":\"bike\"}')",
+      "Bash(git config *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('next:', p.dependencies.next, 'react:', p.dependencies.react\\)\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s 'http://localhost:3000/api/world?userId=default-user')",
+      "Bash(curl -s 'http://localhost:3000')",
+      "Bash(node --check /Users/harshshah/Desktop/Projects/HackPrinceton/components/world/WorldCanvas.js)",
+      "Bash(node --check /Users/harshshah/Desktop/Projects/HackPrinceton/app/page.js)",
+      "Bash(node --check /Users/harshshah/Desktop/Projects/HackPrinceton/app/layout.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
+    ]
+  }
+}

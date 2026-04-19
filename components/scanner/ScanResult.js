@@ -15,9 +15,6 @@ export default function ScanResult({ result, onEarnXp }) {
         </div>
         <div className="scan-product-info">
           <h3>{result.productName}</h3>
-          <span className={`carbon-pill carbon-pill--${result.carbonImpact}`}>
-            {result.carbonImpact} carbon impact
-          </span>
         </div>
       </div>
 
@@ -29,17 +26,21 @@ export default function ScanResult({ result, onEarnXp }) {
 
       <p className="scan-summary">{result.summary}</p>
 
-      {result.materials?.length > 0 && (
-        <div className="scan-section">
-          <h4>Materials</h4>
-          <ul>{result.materials.map((m, i) => <li key={i}>{m}</li>)}</ul>
+      {result.estimatedCarbonKg !== undefined && (
+        <div className="scan-section" style={{ background: '#000', color: '#fff', padding: '12px', marginTop: '14px', border: '3px solid var(--border)' }}>
+          <h4 style={{ color: '#aaa', marginBottom: '4px' }}>ESTIMATED CO₂e FOOTPRINT</h4>
+          <div style={{ fontSize: '1.4rem', fontFamily: 'var(--font-retro)' }}>{result.estimatedCarbonKg} kg</div>
         </div>
       )}
 
-      {result.concerns?.length > 0 && (
+      {result.emissionsBreakdown && (
         <div className="scan-section scan-section--concerns">
-          <h4>Concerns</h4>
-          <ul>{result.concerns.map((c, i) => <li key={i}>⚠️ {c}</li>)}</ul>
+          <h4>Emissions Breakdown</h4>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <li>🏭 <strong>Manufacturing:</strong> {result.emissionsBreakdown.manufacturing}</li>
+            <li>🚚 <strong>Transport:</strong> {result.emissionsBreakdown.transport}</li>
+            <li>♻️ <strong>End of Life:</strong> {result.emissionsBreakdown.endOfLife}</li>
+          </ul>
         </div>
       )}
 
