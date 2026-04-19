@@ -47,6 +47,7 @@ const FURNITURE = [
 // Interactive Task Zones anchored to the house furniture
 const ZONES = [
     { x: -2.0, z: 8.0, cat: 'energy', label: 'Solar Panels' },
+    { x: -2.5, z: 8.5, cat: 'nature', label: 'Garden' },
     { x: 12.4, z: 4.0, cat: 'food', label: 'Smart Fridge' },
     { x: 11.0, z: 6.0, cat: 'waste', label: 'Recycling' },
     { x: 11.0, z: 7.5, cat: 'shopping', label: 'Eco Market' },

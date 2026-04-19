@@ -9,7 +9,7 @@ const WorldCanvas = dynamic(() => import('@/components/world/WorldCanvas'), { ss
 
 const CAT_COLORS = {
   transport: '#40a0f0', food: '#f0a020', energy: '#f0e020',
-  waste: '#a060f0', shopping: '#f040a0', all: '#10d870',
+  waste: '#a060f0', shopping: '#f040a0', nature: '#16a34a', all: '#10d870',
   door: '#f0a020',
 };
 
