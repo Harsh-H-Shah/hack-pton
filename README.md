@@ -1,6 +1,6 @@
 # Live, Laugh, Plant 🌱
 
-**Live, Laugh, Plant** (formerly EcoVerse) is a gamified sustainability web app that lets users explore a 3D world, scan products with OCR, and track their eco‑friendly actions.  The project includes:
+**Live, Laugh, Plant** is a gamified sustainability web app that lets users explore a 3D world, scan products with OCR, and track their eco‑friendly actions.  The project includes:
 
 - A **Next.js** front‑end with a retro‑styled 3D environment built on `react‑three‑fiber` and `@react‑three/drei`.
 - An **AI‑powered scanner** powered by Google Gemini that returns structured carbon‑emission data.
