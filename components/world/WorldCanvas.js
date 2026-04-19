@@ -34,7 +34,7 @@ const FURNITURE = [
     
     // Task-specific furniture
     { type: 'laptop', x: 750, y: 250, w: 100, h: 100, yOffset: 0.6, rot: [0, Math.PI, 0] },
-    { type: 'trashcan', x: 1100, y: 600, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'trashcan', x: 800, y: 1000, w: 50, h: 50, rot: [0, 0, 0] },
     { type: 'coatRack', x: 950, y: 950, w: 50, h: 50, rot: [0, 0, 0] },
 
     // Outdoor Nature & Garden Area
@@ -58,7 +58,7 @@ const ZONES = [
     { x: -2.0, z: 4.0, cat: 'energy', label: 'Solar Panels' },
     { x: -2.5, z: 8.5, cat: 'nature', label: 'Garden' },
     { x: 12.4, z: 4.0, cat: 'food', label: 'Smart Fridge' },
-    { x: 11.0, z: 6.0, cat: 'waste', label: 'Recycling' },
+    { x: 8.0, z: 10.0, cat: 'waste', label: 'Recycling' },
     { x: 11.0, z: 7.5, cat: 'shopping', label: 'Eco Market' },
     { x: 9.8, z: 10.0, cat: 'transport', label: 'EV Keys' }
 ];
@@ -409,6 +409,16 @@ export default function WorldCanvas({ environment = 'home', tier = 1, unlockedEl
                         {ZONES.map((z, i) => {
                             return (
                                 <group key={i} position={[z.x, 0, z.z]} onClick={() => onZoneClick && onZoneClick(z.cat)}>
+                                    {/* Task Zone Highlight */}
+                                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+                                        <ringGeometry args={[0.7, 0.9, 32]} />
+                                        <meshBasicMaterial color="#fde047" transparent opacity={0.8} />
+                                    </mesh>
+                                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
+                                        <circleGeometry args={[0.7, 32]} />
+                                        <meshBasicMaterial color="#fde047" transparent opacity={0.2} />
+                                    </mesh>
+                                    
                                     <Float speed={2} rotationIntensity={0} floatIntensity={0.5}>
                                         <Text position={[0, 1.5, 0]} fontSize={0.3} color="black" outlineWidth={0.02} outlineColor="white">
                                             {z.label}
