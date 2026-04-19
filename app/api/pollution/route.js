@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+  // Trim in case of stray whitespace/newline when pasted into Vercel env vars
+  const apiKey = process.env.OPENWEATHERMAP_API_KEY?.trim();
 
   if (!apiKey) {
     return NextResponse.json(
@@ -24,7 +25,10 @@ export async function GET(request) {
       const geoData = await geoRes.json();
       // OWM returns an error object (with .message) when the key is bad
       if (geoData?.message) {
-        return NextResponse.json({ error: `OpenWeatherMap: ${geoData.message}` }, { status: 401 });
+        const msg = String(geoData.message).toLowerCase().includes('invalid api key')
+          ? 'OpenWeatherMap rejected the API key. New keys take up to 2 hours to activate — if it\'s older than that, check Vercel env var OPENWEATHERMAP_API_KEY for typos/whitespace, then redeploy.'
+          : `OpenWeatherMap: ${geoData.message}`;
+        return NextResponse.json({ error: msg }, { status: 401 });
       }
       if (!Array.isArray(geoData) || !geoData.length) {
         return NextResponse.json({ error: `Location "${q}" not found. Try a city name like "London" or "New York".` }, { status: 404 });
@@ -50,7 +54,10 @@ export async function GET(request) {
 
     // Surface OWM auth/activation errors instead of crashing
     if (pollData?.message) {
-      return NextResponse.json({ error: `OpenWeatherMap: ${pollData.message}` }, { status: pollRes.status });
+      const msg = String(pollData.message).toLowerCase().includes('invalid api key')
+        ? 'OpenWeatherMap rejected the API key. New keys take up to 2 hours to activate — if it\'s older than that, check Vercel env var OPENWEATHERMAP_API_KEY for typos/whitespace, then redeploy.'
+        : `OpenWeatherMap: ${pollData.message}`;
+      return NextResponse.json({ error: msg }, { status: pollRes.status });
     }
     if (!pollData.list?.[0]) {
       return NextResponse.json({ error: 'No air quality data returned for this location.' }, { status: 502 });
