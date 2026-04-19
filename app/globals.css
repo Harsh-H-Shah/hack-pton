@@ -328,19 +328,20 @@ button { cursor:pointer; font-family:inherit; }
   pointer-events: none;
 }
 .xp-toast {
-  padding: 9px 18px;
+  padding: 12px 24px;
   background: #080810;
-  border: 3px solid var(--tc, var(--accent));
-  box-shadow: 3px 3px 0 #000;
-  font-family: var(--font-retro); font-size: 1.01rem;
+  border: 4px solid var(--tc, var(--accent));
+  box-shadow: 4px 4px 0 #000;
+  font-family: var(--font-retro); font-size: 1.4rem;
   color: var(--tc, var(--accent)); letter-spacing: 1px;
-  animation: toast-fly 2.8s ease forwards; white-space: nowrap;
+  animation: toast-fly 3s cubic-bezier(0.25, 1.5, 0.5, 1) forwards; white-space: nowrap;
 }
 @keyframes toast-fly {
-  0%   { opacity:0; transform:translateY(10px); }
-  12%  { opacity:1; transform:translateY(0); }
-  70%  { opacity:1; transform:translateY(-16px); }
-  100% { opacity:0; transform:translateY(-32px); }
+  0%   { opacity: 0; transform: translateY(40px) scale(0.4); }
+  15%  { opacity: 1; transform: translateY(0px) scale(1.15); filter: brightness(1.5); }
+  25%  { opacity: 1; transform: translateY(-10px) scale(1); filter: brightness(1); }
+  80%  { opacity: 1; transform: translateY(-30px) scale(1); filter: brightness(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); filter: brightness(2); }
 }
 
 /* ── Interior toggle button ───────────────────────────────────────── */

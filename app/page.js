@@ -56,7 +56,7 @@ export default function HomePage() {
         body: JSON.stringify({ actionId, userId: 'default-user' }),
       });
       const data = await res.json();
-      addToast(`+${data.xp ?? '?'} XP`, '#10d870');
+      addToast(`🌟 +${data.xp ?? '?'} XP 🌟`, '#10d870');
       if (data.tierChanged) setCelebration(data.newTier);
       fetchData();
     } catch {

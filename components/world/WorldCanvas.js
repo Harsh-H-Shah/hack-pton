@@ -35,12 +35,18 @@ const FURNITURE = [
     // Task-specific furniture
     { type: 'laptop', x: 750, y: 250, w: 100, h: 100, yOffset: 0.6, rot: [0, Math.PI, 0] },
     { type: 'trashcan', x: 1100, y: 600, w: 50, h: 50, rot: [0, 0, 0] },
-    { type: 'coatRack', x: 950, y: 950, w: 50, h: 50, rot: [0, 0, 0] }
+    { type: 'coatRack', x: 950, y: 950, w: 50, h: 50, rot: [0, 0, 0] },
+
+    // Outdoor Nature near Solar
+    { type: 'tree_oak', x: -250, y: 800, w: 100, h: 100, rot: [0, 0, 0] },
+    { type: 'tree_pineDefaultA', x: -300, y: 600, w: 100, h: 100, rot: [0, 0, 0] },
+    { type: 'plant_bushLarge', x: -150, y: 850, w: 50, h: 50, rot: [0, 0, 0] },
+    { type: 'rock_largeA', x: -200, y: 700, w: 50, h: 50, rot: [0, 0, 0] }
 ];
 
 // Interactive Task Zones anchored to the house furniture
 const ZONES = [
-    { x: 5.2, z: 8.5, cat: 'energy', label: 'Energy Hub' },
+    { x: -2.0, z: 8.0, cat: 'energy', label: 'Solar Panels' },
     { x: 12.4, z: 4.0, cat: 'food', label: 'Smart Fridge' },
     { x: 11.0, z: 6.0, cat: 'waste', label: 'Recycling' },
     { x: 11.0, z: 7.5, cat: 'shopping', label: 'Eco Market' },
@@ -125,7 +131,7 @@ function Player({ positionRef, keysRef, onPlayerMove }) {
             
             // Physical Wall Collision Check
             const wallCollision = (nx, nz) => {
-                const wPad = 0.2; // Smaller padding to prevent getting stuck in doorways
+                const wPad = 0.5; // Larger padding to strictly prevent walking through walls
                 for (let w of WALLS) {
                     const wx = w.x / TILE_SIZE;
                     const wz = w.y / TILE_SIZE;
@@ -181,7 +187,7 @@ function Player({ positionRef, keysRef, onPlayerMove }) {
 
     return (
         <group ref={groupRef}>
-            <primitive object={scene} scale={1.2} />
+            <primitive object={scene} scale={1.5} />
         </group>
     );
 }
