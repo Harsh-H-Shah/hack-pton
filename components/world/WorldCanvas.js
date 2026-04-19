@@ -82,6 +82,8 @@ function TexturedGround({ tierLevel }) {
     grassMap.wrapS = grassMap.wrapT = THREE.RepeatWrapping;
     grassMap.repeat.set(2, 2); // Scale texture appropriately for small patches
 
+    const meshRef = useRef();
+
     const GRASS_PATCHES = useMemo(() => {
         const patches = [];
         let seed = 12345;
@@ -100,7 +102,31 @@ function TexturedGround({ tierLevel }) {
 
     // Show more patches as tier increases
     const numPatches = Math.floor((tierLevel || 1) * 33);
-    const visiblePatches = GRASS_PATCHES.slice(0, numPatches);
+
+    useEffect(() => {
+        if (!meshRef.current) return;
+        const dummy = new THREE.Object3D();
+        
+        // Render visible patches
+        for (let i = 0; i < numPatches; i++) {
+            const p = GRASS_PATCHES[i];
+            dummy.position.set(p.x, -0.09 + i * 0.00005, p.z);
+            dummy.rotation.set(-Math.PI / 2, 0, 0);
+            dummy.scale.set(p.radius, p.radius, 1);
+            dummy.updateMatrix();
+            meshRef.current.setMatrixAt(i, dummy.matrix);
+        }
+        
+        // Hide unused patches (scale to 0)
+        for (let i = numPatches; i < 200; i++) {
+            dummy.position.set(0, 0, 0);
+            dummy.scale.set(0, 0, 0);
+            dummy.updateMatrix();
+            meshRef.current.setMatrixAt(i, dummy.matrix);
+        }
+        
+        meshRef.current.instanceMatrix.needsUpdate = true;
+    }, [numPatches, GRASS_PATCHES]);
 
     return (
         <group>
@@ -109,13 +135,11 @@ function TexturedGround({ tierLevel }) {
                 <meshStandardMaterial roughness={1} color="#604632" />
             </Plane>
             
-            {/* Grass Patches */}
-            {visiblePatches.map((p, i) => (
-                <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[p.x, -0.09 + i * 0.00005, p.z]}>
-                    <circleGeometry args={[p.radius, 16]} />
-                    <meshStandardMaterial map={grassMap} roughness={1} color="#aadd88" />
-                </mesh>
-            ))}
+            {/* Grass Patches InstancedMesh (1 Draw Call instead of 200) */}
+            <instancedMesh ref={meshRef} args={[null, null, 200]}>
+                <circleGeometry args={[1, 16]} />
+                <meshStandardMaterial map={grassMap} roughness={1} color="#aadd88" />
+            </instancedMesh>
         </group>
     );
 }
