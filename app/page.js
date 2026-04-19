@@ -194,26 +194,23 @@ export default function HomePage() {
 
       {/* ── Action dock ──────────────────────────────────────────────── */}
       <div className="action-dock">
-        <div className="dock-cat-row">
-          {actionsData.categories.map(cat => (
-            <button
-              key={cat.id}
-              className={`dock-btn ${activePanel===cat.id?'dock-btn--active':''}`}
-              style={{ '--dc': cat.color }}
-              onClick={() => setActivePanel(prev => prev === cat.id ? null : cat.id)}
-            >
-              <span className="dock-icon">{cat.emoji}</span>
-              <span className="dock-label">{cat.name.slice(0,4).toUpperCase()}</span>
-            </button>
-          ))}
-        </div>
-        <div className="dock-nav-row">
-          <Link href="/log"        className="dock-nav-link"><span className="dock-nav-icon">📋</span>Log</Link>
-          <Link href="/scan"       className="dock-nav-link"><span className="dock-nav-icon">📷</span>Scan</Link>
-          <Link href="/dashboard"  className="dock-nav-link"><span className="dock-nav-icon">📊</span>Stats</Link>
-          <Link href="/transport"  className="dock-nav-link"><span className="dock-nav-icon">🚲</span>Travel</Link>
-          <Link href="/pollution"  className="dock-nav-link"><span className="dock-nav-icon">🌫️</span>Air</Link>
-        </div>
+        {actionsData.categories.map(cat => (
+          <button
+            key={cat.id}
+            className={`dock-btn ${activePanel===cat.id?'dock-btn--active':''}`}
+            style={{ '--dc': cat.color }}
+            onClick={() => setActivePanel(prev => prev === cat.id ? null : cat.id)}
+          >
+            <span className="dock-icon">{cat.emoji}</span>
+            <span className="dock-label">{cat.name.slice(0,4).toUpperCase()}</span>
+          </button>
+        ))}
+        <div className="dock-sep" />
+        <Link href="/log"        className="dock-nav-link" title="Log">📋</Link>
+        <Link href="/scan"       className="dock-nav-link" title="Scan">📷</Link>
+        <Link href="/dashboard"  className="dock-nav-link" title="Stats">📊</Link>
+        <Link href="/transport"  className="dock-nav-link" title="Travel">🚲</Link>
+        <Link href="/pollution"  className="dock-nav-link" title="Air Quality">🌫️</Link>
       </div>
 
       {/* ── Action panel ─────────────────────────────────────────────── */}

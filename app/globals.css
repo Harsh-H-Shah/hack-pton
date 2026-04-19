@@ -182,34 +182,35 @@ button { cursor:pointer; font-family:inherit; }
   to   { opacity:1; transform:translateX(-50%) scale(1); }
 }
 
-/* ── Action dock ─────────────────────────────────────────────────── */
+/* ── Action dock — single row ────────────────────────────────────── */
 .action-dock {
   position: fixed; bottom: 0; left: 50%; z-index: 30;
   transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: stretch;
-  width: min(700px, 100vw);
+  display: flex; flex-direction: row; align-items: center;
+  gap: 4px;
+  padding: 8px 14px 16px;
   background: #06060f;
   border-top: 3px solid var(--amber);
   border-left: 3px solid var(--amber);
   border-right: 3px solid var(--amber);
   box-shadow: 0 -4px 0 #000;
 }
-
-/* ── Category action row ─────────────────────────────────────────── */
-.dock-cat-row {
-  display: flex; align-items: center; justify-content: center; gap: 5px;
-  padding: 10px 14px 8px;
+.dock-sep {
+  width: 2px; align-self: stretch;
+  background: rgba(240,160,32,0.28);
+  margin: 2px 6px;
+  flex-shrink: 0;
 }
 .dock-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 8px 12px 7px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 10px 6px;
   border: 2px solid var(--dc, var(--border));
-  background: rgba(0,0,0,0.35);
-  color: var(--dc, rgba(200,200,235,0.55));
-  font-family: var(--font-retro); font-size: 0.62rem;
-  text-transform: uppercase; letter-spacing: 0.6px;
-  min-width: 54px;
-  transition: background 0.09s, color 0.09s, transform 0.06s;
+  background: rgba(0,0,0,0.3);
+  color: var(--dc, rgba(200,200,235,0.6));
+  font-family: var(--font-retro); font-size: 0.6rem;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  min-width: 50px; flex-shrink: 0;
+  transition: background 0.08s, color 0.08s, transform 0.06s;
 }
 .dock-btn:hover {
   background: rgba(255,255,255,0.07);
@@ -222,32 +223,26 @@ button { cursor:pointer; font-family:inherit; }
   color: #000;
   border-color: var(--dc, var(--accent));
 }
-.dock-icon { font-size: 1.45rem; line-height: 1; }
+.dock-icon { font-size: 1.35rem; line-height: 1; }
 .dock-label { line-height: 1; }
-
-/* ── Page navigation row ─────────────────────────────────────────── */
-.dock-nav-row {
-  display: flex; align-items: center; justify-content: center; gap: 4px;
-  padding: 6px 14px 14px;
-  border-top: 1px solid rgba(240,160,32,0.18);
-}
 .dock-nav-link {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 14px;
-  font-family: var(--font-retro); font-size: 0.7rem;
-  color: rgba(200, 200, 235, 0.7);
-  letter-spacing: 0.5px; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; flex-shrink: 0;
+  font-size: 1.3rem; line-height: 1;
   border: 1px solid rgba(160,160,200,0.2);
   background: rgba(255,255,255,0.02);
-  transition: color 0.09s, background 0.09s, border-color 0.09s;
-  white-space: nowrap;
+  transition: background 0.08s, border-color 0.08s, transform 0.06s;
 }
 .dock-nav-link:hover {
-  color: var(--amber);
-  background: rgba(240,160,32,0.09);
-  border-color: rgba(240,160,32,0.45);
+  background: rgba(240,160,32,0.1);
+  border-color: rgba(240,160,32,0.5);
+  transform: translateY(-2px);
 }
-.dock-nav-icon { font-size: 1rem; line-height: 1; }
+@media (max-width: 560px) {
+  .dock-label { display: none; }
+  .dock-btn { min-width: 40px; padding: 7px 6px; }
+  .dock-nav-link { width: 34px; height: 34px; font-size: 1.1rem; }
+}
 
 /* ── Action panel ────────────────────────────────────────────────── */
 .panel-backdrop {
