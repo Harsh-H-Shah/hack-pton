@@ -77,15 +77,46 @@ function GLTFModel({ name, position, rotation = [0, 0, 0], scale = 1 }) {
     return <Clone object={scene} position={position} rotation={rotation} scale={scale} />;
 }
 
-function TexturedGround() {
+function TexturedGround({ tierLevel }) {
     const grassMap = useTexture('/assets/textures/grass.png');
     grassMap.wrapS = grassMap.wrapT = THREE.RepeatWrapping;
-    // Balanced repeat scaling
-    grassMap.repeat.set(50, 50);
+    grassMap.repeat.set(2, 2); // Scale texture appropriately for small patches
+
+    const GRASS_PATCHES = useMemo(() => {
+        const patches = [];
+        let seed = 12345;
+        const random = () => {
+            const x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        };
+        for(let i = 0; i < 200; i++) {
+            const x = -10 + random() * 40;
+            const z = -5 + random() * 30;
+            const radius = 1.5 + random() * 3.5;
+            patches.push({ x, z, radius });
+        }
+        return patches;
+    }, []);
+
+    // Show more patches as tier increases
+    const numPatches = Math.floor((tierLevel || 1) * 33);
+    const visiblePatches = GRASS_PATCHES.slice(0, numPatches);
+
     return (
-        <Plane args={[500, 500]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-            <meshStandardMaterial map={grassMap} roughness={1} color="#aadd88" />
-        </Plane>
+        <group>
+            {/* Base Dirt Ground */}
+            <Plane args={[500, 500]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+                <meshStandardMaterial roughness={1} color="#604632" />
+            </Plane>
+            
+            {/* Grass Patches */}
+            {visiblePatches.map((p, i) => (
+                <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[p.x, -0.09 + i * 0.00005, p.z]}>
+                    <circleGeometry args={[p.radius, 16]} />
+                    <meshStandardMaterial map={grassMap} roughness={1} color="#aadd88" />
+                </mesh>
+            ))}
+        </group>
     );
 }
 
@@ -335,7 +366,7 @@ export default function WorldCanvas({ environment = 'home', tier = 1, unlockedEl
                     </group>
 
                     {/* Outside Ground */}
-                    <TexturedGround />
+                    <TexturedGround tierLevel={tier?.id || 1} />
 
                     {/* Perimeter Fence */}
                     <group>
